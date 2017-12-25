@@ -1,0 +1,39 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    repositories {
+        jcenter()
+        maven {
+            url "http://mvn.leancloud.cn/nexus/content/repositories/public"
+        }
+        maven {
+            url "http://maven.dev.elenet.me/nexus/content/groups/public"
+        }
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'me.ele:lancet-plugin:1.0.2'
+        classpath 'me.ele:eradle:1.7.0'
+    }
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven {
+            url "http://mvn.leancloud.cn/nexus/content/repositories/public"
+        }
+        maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+    }
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
