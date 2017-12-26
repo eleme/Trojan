@@ -31,12 +31,12 @@ buildscript {
     }
     dependencies {
         ......
-        classpath 'me.ele: lancet-plugin: 1.0.2'
+        classpath 'me.ele:lancet-plugin:1.0.2'
     }
 }
 allprojects {
     repositories {
-       ......
+        ......
         maven {url "https://dl.bintray.com/michaelzhong/maven"}
     }
 }
@@ -48,9 +48,9 @@ Add in the app directory's build.gradle:
 apply plugin: 'me.ele.lancet'
 
 dependencies {
-    ...
-    provided 'me.ele: lancet-base: 1.0.2'
-    compile 'me.ele: trojan-library: 0.0.3'
+    ......
+    provided 'me.ele:lancet-base:1.0.2'
+    compile 'me.ele:trojan-library:0.0.3'
 }
 ```
 
@@ -116,7 +116,7 @@ Trojan.refreshUser(null);
 
 ### 4. Upload Solution
 
-In [Demo](https://github.com/ELELogistics/Trojan/blob/master/app/src/main/java/me/ele/trojan/demo/upload/DemoLeanCloudUploader.java) we provided free and simple way such as  [LeanCloud](https://leancloud.cn/) to upload log file, you can browse, download and download log file.
+In [Demo](https://github.com/ELELogistics/Trojan/blob/master/app/src/main/java/me/ele/trojan/demo/upload/DemoLeanCloudUploader.java) we provided free and simple way such as [LeanCloud](https://leancloud.cn/) to upload log file, you can browse, download and download log file.
 
 ## PS
 

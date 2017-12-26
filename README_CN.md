@@ -119,7 +119,7 @@ Trojan.refreshUser(null);
 
 ## 备注
 
-通过集成 [Trojan](https://github.com/ELELogistics/Trojan)，可以轻松实现用户日志的记录功能，是不是很简单呀！要是对 Lancet 的使用有疑问，大家可以参考 [https://github.com/eleme/lancet/blob/dev/README_zh.md](https://github.com/eleme/lancet/blob/dev/README_zh.md)，这里就不赘述。
+通过集成[Trojan](https://github.com/ELELogistics/Trojan)，可以轻松实现用户日志的记录功能，是不是很简单呀！要是对Lancet的使用有疑问，大家可以参考 [https://github.com/eleme/lancet/blob/dev/README_zh.md](https://github.com/eleme/lancet/blob/dev/README_zh.md)，这里就不赘述。
 
 ## 协议
 
