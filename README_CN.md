@@ -25,19 +25,9 @@
 
 ```java
 buildscript {
-    repositories {
-        ......
-        maven { url "https://dl.bintray.com/michaelzhong/maven" }
-    }
     dependencies {
         .......
         classpath 'me.ele:lancet-plugin:1.0.2'
-    }
-}
-allprojects {
-    repositories {
-        ......
-        maven { url "https://dl.bintray.com/michaelzhong/maven" }
     }
 }
 ```

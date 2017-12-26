@@ -10,9 +10,6 @@ buildscript {
         maven {
             url "http://mvn.leancloud.cn/nexus/content/repositories/public"
         }
-        maven {
-            url "https://dl.bintray.com/michaelzhong/maven"
-        }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.3'
@@ -30,9 +27,6 @@ allprojects {
         }
         maven {
             url "http://mvn.leancloud.cn/nexus/content/repositories/public"
-        }
-        maven {
-            url "https://dl.bintray.com/michaelzhong/maven"
         }
     }
 }
