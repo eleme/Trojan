@@ -4,20 +4,20 @@ buildscript {
     repositories {
         jcenter()
         maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+        maven {
             url "http://mvn.leancloud.cn/nexus/content/repositories/public"
         }
         maven {
-            url "http://maven.dev.elenet.me/nexus/content/groups/public"
-        }
-        maven {
-            url 'https://maven.google.com/'
-            name 'Google'
+            url "https://dl.bintray.com/michaelzhong/maven"
         }
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.3.3'
         classpath 'me.ele:lancet-plugin:1.0.2'
-        classpath 'me.ele:eradle:1.7.0'
+        classpath 'com.novoda:bintray-release:0.3.4'
     }
 }
 
@@ -25,11 +25,14 @@ allprojects {
     repositories {
         jcenter()
         maven {
+            url 'https://maven.google.com/'
+            name 'Google'
+        }
+        maven {
             url "http://mvn.leancloud.cn/nexus/content/repositories/public"
         }
         maven {
-            url 'https://maven.google.com/'
-            name 'Google'
+            url "https://dl.bintray.com/michaelzhong/maven"
         }
     }
 }

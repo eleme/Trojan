@@ -1,6 +1,5 @@
 apply plugin: 'com.android.application'
 apply plugin: 'me.ele.lancet'
-apply plugin: 'eradle'
 
 android {
 
@@ -44,7 +43,10 @@ dependencies {
     compile 'cn.leancloud.android:avoscloud-sdk:v4.4.4'
     compile "com.squareup.retrofit2:converter-gson:2.0.1"
 
+    provided "me.ele:lancet-base:1.0.2"
+
     compile project(':trojan')
+    //compile 'me.ele:trojan-library:0.0.2'
 
     //TODO 注意:这是为了debug C++代码方便而加的配置，发布时要改过来
     //debugCompile project(path: ':trojan', configuration: 'debug')

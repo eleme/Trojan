@@ -20,12 +20,13 @@ public final class TrojanConfig {
     private boolean enableLog;
     private String logDir;
 
-    //是否需要加密基本信息
+    /**
+     * 是否需要加密基本信息
+     */
     private boolean encryptBasicInfo = false;
     private EncryptMethod encryptMethod;
     private String key;
 
-    //TODO 另外，还需要加入日志的存放位置这个选项，因为有的app可能想统一放在自己的目录下面。
     private TrojanConfig(final Builder builder) {
         this.context = builder.context;
         this.userInfo = builder.userInfo;
@@ -34,7 +35,7 @@ public final class TrojanConfig {
         this.enableLog = builder.enableLog;
         this.encryptMethod = builder.encryptMethod;
         this.encryptMethod = builder.encryptMethod;
-        this.key = builder.key;
+        this.key = builder.cipherKey;
     }
 
     public String getUserInfo() {
@@ -83,12 +84,12 @@ public final class TrojanConfig {
         private String deviceInfo;
         private String logDir;
         private boolean enableLog = true;
-        //是否需要加密基本信息
+
         private boolean encryptBasicInfo = false;
-        //加密方法
+
         private EncryptMethod encryptMethod;
-        //这个key最好不要写死，而是通过https下发,否则不安全
-        private String key;
+
+        private String cipherKey;
 
         public Builder(Context context) {
             if (null == context) {
@@ -124,7 +125,7 @@ public final class TrojanConfig {
 
         public Builder encrypt(EncryptMethod encryptMethod, String key) {
             this.encryptMethod = encryptMethod;
-            this.key = key;
+            this.cipherKey = key;
             return this;
         }
 

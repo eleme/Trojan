@@ -4,19 +4,9 @@ buildscript {
     properties.keys().each { key -> project.ext.set(key, properties.getProperty(key))
     }
 }
-buildscript {
-    repositories {
-        maven {
-            url "http://maven.dev.elenet.me/nexus/content/groups/public"
-        }
-    }
-    dependencies {
-        classpath 'me.ele:eradle:1.7.0'
-    }
-}
 
-apply plugin: 'eradle'
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
 
 def trojan_version_code = 304
 def trojan_version = "3.0.4-SNAPSHOT"
@@ -68,13 +58,14 @@ android {
     }
     lintOptions {
         abortOnError false
+        checkReleaseBuilds false
     }
 }
 
 dependencies {
     compile fileTree(include: ['*.jar'], dir: 'libs')
-    provided 'com.android.support:recyclerview-v7:23.4.0'
-    provided 'com.android.support:appcompat-v7:23.4.0'
+    compile 'com.android.support:recyclerview-v7:23.4.0'
+    compile 'com.android.support:appcompat-v7:23.4.0'
 
     provided "com.squareup.retrofit2:converter-gson:2.0.1"
     provided "me.ele:lancet-base:1.0.2"
@@ -92,18 +83,9 @@ task copyOutputs {
     }
 }
 
-
-
-modifyPom {
-    project {
-        groupId 'me.ele'
-        artifactId 'trojan'
-        version "${trojan_version}"
-        packaging 'aar'
-        description = 'Android日志收集库'
-    }
-}
-
-extraArchive {
-    sources = false
+publish {
+    userOrg = 'michaelzhong'
+    groupId = 'me.ele'
+    artifactId = 'trojan-library'
+    publishVersion = '0.0.3'
 }
