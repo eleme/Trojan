@@ -13,6 +13,8 @@
 * 流量开销小，支持在线配置，远程控制用户日志文件上传与否；
 * 稳定性高，目前已稳定运行在饿了么物流团队众包等多个 APP 上。
 
+> [English Introduction](/README.md)
+
 ## 综述
 
 在开源的 [Trojan](https://github.com/ELELogistics/Trojan) SDK中，目前采集了 Activity 和 Fragment 生命周期，View Click 事件，网络状态变化，手机电量状态变化等基础日志，还通过 AOP 技术插桩 [KLog](https://github.com/ZhaoKaiQiang/KLog)采集 Log 日志，要是项目中未使用 KLog，也可以根据项目情况具体定制。考虑到每个项目中网络模块的实现框架都不尽相同，有 [OkHttp](https://github.com/square/okhttp)、[Volley](https://github.com/google/volley)、[Android-Async-Http](https://github.com/loopj/android-async-http) 等等，所以采集网络日志这一部分不方便统一处理，需要使用者通过 [Lancet](https://github.com/eleme/lancet) 插桩具体网络框架来收集日志。在 [Demo](https://github.com/ELELogistics/Trojan/blob/master/app/src/main/java/me/ele/trojan/demo/DemoHook.java) 中具体以 OkHttp 为例，实现采集 Http request 和 response 的功能，可作为参考。而与业务相关的日志，需要使用者自己采集。
