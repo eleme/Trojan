@@ -1,4 +1,4 @@
-# Trojan
+![](/assets/trojan_banner.png)
 
 [![Language: Java](https://img.shields.io/badge/language-Java-blue.svg)](https://www.java.com)
 [![LICENSE](https://img.shields.io/badge/license-GPLv3-000000.svg)](https://github.com/ELELogistics/Trojan/blob/master/LICENSE)
