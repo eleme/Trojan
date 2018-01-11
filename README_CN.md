@@ -1,8 +1,19 @@
-# Trojan
+![](/assets/trojan_banner.png)
 
-[![Language: Java](https://img.shields.io/badge/language-Java-blue.svg)](https://www.java.com)
-[![LICENSE](https://img.shields.io/badge/license-GPLv3-000000.svg)](https://github.com/ELELogistics/Trojan/blob/master/LICENSE)
-![Love](https://img.shields.io/badge/made%20with-%3C3-orange.svg)
+<p align="center">
+    <a href="https://gradleupdate.appspot.com/ELELogistics/Trojan/status">
+        <img src="https://gradleupdate.appspot.com/ELELogistics/Trojan/status.svg">
+    </a>
+    <a href="https://www.java.com">
+        <img src="https://img.shields.io/badge/language-Java-blue.svg">
+    </a>
+    <a href="https://github.com/ELELogistics/Trojan/blob/master/LICENSE">
+        <img src="https://img.shields.io/badge/license-GPLv3-000000.svg">
+    </a>
+    <a href="https://raw.githubusercontent.com/EyreFree/EFQRCode/assets/icon/MadeWith%3C3.png">
+        <img src="https://img.shields.io/badge/made%20with-%3C3-orange.svg">
+    </a>
+</p>
 
 [Trojan](https://github.com/ELELogistics/Trojan) 是一个稳定高效的移动端轻量级日志 SDK，既可以记录通用日志，比如网络请求、电量变化、页面生命周期，也可以记录自定义的日志，从而可以通过用户日志来帮助我们定位分析问题。具有以下特点：
 
@@ -47,6 +58,7 @@ dependencies {
 ## 使用
 
 ### 1. 初始化
+
 在自定义的 `Application` 添加：
 
 ```java
@@ -109,7 +121,7 @@ Trojan.refreshUser(null);
 
 ## 备注
 
-通过集成[Trojan](https://github.com/ELELogistics/Trojan)，可以轻松实现用户日志的记录功能，是不是很简单呀！要是对Lancet的使用有疑问，大家可以参考 [https://github.com/eleme/lancet/blob/dev/README_zh.md](https://github.com/eleme/lancet/blob/dev/README_zh.md)，这里就不赘述。
+通过集成 [Trojan](https://github.com/ELELogistics/Trojan)，可以轻松实现用户日志的记录功能，是不是很简单呀！要是对 Lancet 的使用有疑问，大家可以参考 [https://github.com/eleme/lancet/blob/dev/README_zh.md](https://github.com/eleme/lancet/blob/dev/README_zh.md)，这里就不赘述。
 
 ## 协议
 

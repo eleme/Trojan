@@ -1,8 +1,19 @@
-# Trojan
+![](/assets/trojan_banner.png)
 
-[![Language: Java](https://img.shields.io/badge/language-Java-blue.svg)](https://www.java.com)
-[![LICENSE](https://img.shields.io/badge/license-GPLv3-000000.svg)](https://github.com/ELELogistics/Trojan/blob/master/LICENSE)
-![Love](https://img.shields.io/badge/made%20with-%3C3-orange.svg)
+<p align="center">
+	<a href="https://gradleupdate.appspot.com/ELELogistics/Trojan/status">
+        <img src="https://gradleupdate.appspot.com/ELELogistics/Trojan/status.svg">
+    </a>
+    <a href="https://www.java.com">
+        <img src="https://img.shields.io/badge/language-Java-blue.svg">
+    </a>
+    <a href="https://github.com/ELELogistics/Trojan/blob/master/LICENSE">
+        <img src="https://img.shields.io/badge/license-GPLv3-000000.svg">
+    </a>
+    <a href="https://raw.githubusercontent.com/EyreFree/EFQRCode/assets/icon/MadeWith%3C3.png">
+        <img src="https://img.shields.io/badge/made%20with-%3C3-orange.svg">
+    </a>
+</p>
 
 [Trojan](https://github.com/ELELogistics/Trojan) is a stable and efficient mobile lightweight log SDK that not only records general logs, such as Http, power changes, component life cycles, but also records the definition of the log, which it is useful to  analysis problems through the user logs. Here is the following characteristics:
 
@@ -17,7 +28,7 @@
 
 ## Overview
 
-In the open source [Trojan](https://github.com/ELELogistics/Trojan) SDK, we have collected basic logs such as Activity and Fragment lifecycles, View Click events, network status changes, phone battery status changes, also include collecting [KLog](https://github.com/ZhaoKaiQiang/KLog) logs, if KLog is not used in the project, it can be customized according to the project specific conditions. Considering that the implementation framework for network modules is different at fact, there are [OkHttp](https://github.com/square/okhttp), [Volley](https://github.com/google/volley) , [Android-Async-Http](https://github.com/loopj/android-async-http), etc. Therefore, this part of collecting network logs is not suitable for customization. Users can use [Lancet](https://github.com/eleme/lancet) to collect logs  at the specific network framework. In [Demo](https://github.com/ELELogistics/Trojan/blob/master/app/src/main/java/me/ele/trojan/demo/DemoHook.java), we can achieve acquisition Http request and response functions in OkHttp, it can be used as a reference. As for business-related logs, users should collect by self.
+In the open source [Trojan](https://github.com/ELELogistics/Trojan) SDK, we have collected basic logs such as Activity and Fragment lifecycles, View Click events, network status changes, phone battery status changes, also include collecting [KLog](https://github.com/ZhaoKaiQiang/KLog) logs, if KLog is not used in the project, it can be customized according to the project specific conditions. Considering that the implementation framework for network modules is different at fact, there are [OkHttp](https://github.com/square/okhttp), [Volley](https://github.com/google/volley), [Android-Async-Http](https://github.com/loopj/android-async-http), etc. Therefore, this part of collecting network logs is not suitable for customization. Users can use [Lancet](https://github.com/eleme/lancet) to collect logs  at the specific network framework. In [Demo](https://github.com/ELELogistics/Trojan/blob/master/app/src/main/java/me/ele/trojan/demo/DemoHook.java), we can achieve acquisition Http request and response functions in OkHttp, it can be used as a reference. As for business-related logs, users should collect by self.
 
 ## Installation
 
