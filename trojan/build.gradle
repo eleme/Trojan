@@ -8,8 +8,8 @@ buildscript {
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 
-def trojan_version_code = 305
-def trojan_version = "3.0.5"
+def trojan_version_code = 4
+def trojan_version = "0.0.4"
 
 android {
 
@@ -87,5 +87,5 @@ publish {
     userOrg = 'michaelzhong'
     groupId = 'me.ele'
     artifactId = 'trojan-library'
-    publishVersion = '0.0.3'
+    publishVersion = '$trojan_version'
 }
