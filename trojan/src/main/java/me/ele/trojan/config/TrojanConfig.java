@@ -5,7 +5,6 @@ import android.text.TextUtils;
 
 import java.io.File;
 
-import me.ele.trojan.encrypt.EncryptMethod;
 import me.ele.trojan.helper.FileHelper;
 import me.ele.trojan.utils.AppUtils;
 
@@ -16,26 +15,20 @@ import me.ele.trojan.utils.AppUtils;
 public final class TrojanConfig {
     private Context context;
     private String userInfo;
-    private String deviceInfo;
+    private String deviceId;
     private boolean enableLog;
+    private boolean enableBackup;
     private String logDir;
-
-    /**
-     * 是否需要加密基本信息
-     */
-    private boolean encryptBasicInfo = false;
-    private EncryptMethod encryptMethod;
-    private String key;
+    private String cipherKey;
 
     private TrojanConfig(final Builder builder) {
         this.context = builder.context;
         this.userInfo = builder.userInfo;
-        this.deviceInfo = builder.deviceInfo;
+        this.deviceId = builder.deviceId;
         this.logDir = builder.logDir;
         this.enableLog = builder.enableLog;
-        this.encryptMethod = builder.encryptMethod;
-        this.encryptMethod = builder.encryptMethod;
-        this.key = builder.cipherKey;
+        this.enableBackup = builder.enableBackup;
+        this.cipherKey = builder.cipherKey;
     }
 
     public String getUserInfo() {
@@ -46,13 +39,13 @@ public final class TrojanConfig {
         this.userInfo = userInfo;
     }
 
-    public String getDeviceInfo() {
-        return deviceInfo;
+    public String getDeviceId() {
+        return deviceId;
     }
 
     public String getLogDir() {
         File dirFile = new File(logDir);
-        if (!dirFile.exists()) {
+        if (!dirFile.exists() || !dirFile.isDirectory()) {
             dirFile.mkdirs();
         }
         return logDir;
@@ -66,29 +59,21 @@ public final class TrojanConfig {
         return enableLog;
     }
 
-    public boolean isEncryptBasicInfo() {
-        return encryptBasicInfo;
+    public boolean isEnableBackup() {
+        return enableBackup;
     }
 
-    public EncryptMethod getEncryptMethod() {
-        return encryptMethod;
-    }
-
-    public String getKey() {
-        return key;
+    public String getCipherKey() {
+        return cipherKey;
     }
 
     public static class Builder {
         private Context context;
         private String userInfo;
-        private String deviceInfo;
+        private String deviceId;
         private String logDir;
         private boolean enableLog = true;
-
-        private boolean encryptBasicInfo = false;
-
-        private EncryptMethod encryptMethod;
-
+        private boolean enableBackup = false;
         private String cipherKey;
 
         public Builder(Context context) {
@@ -98,13 +83,13 @@ public final class TrojanConfig {
             this.context = context;
         }
 
-        public Builder userInfo(String info) {
-            this.userInfo = info;
+        public Builder userInfo(String userInfo) {
+            this.userInfo = userInfo;
             return this;
         }
 
-        public Builder deviceInfo(String info) {
-            this.deviceInfo = info;
+        public Builder deviceId(String deviceId) {
+            this.deviceId = deviceId;
             return this;
         }
 
@@ -118,14 +103,16 @@ public final class TrojanConfig {
             return this;
         }
 
-        public Builder encryptBasicInfo(boolean encryptBasicInfo) {
-            this.encryptBasicInfo = encryptBasicInfo;
+        public Builder enableBackup(boolean enableBackup) {
+            this.enableBackup = enableBackup;
             return this;
         }
 
-        public Builder encrypt(EncryptMethod encryptMethod, String key) {
-            this.encryptMethod = encryptMethod;
-            this.cipherKey = key;
+        public Builder cipherKey(String cipherKey) {
+            if (cipherKey == null || cipherKey.length() < 16) {
+                throw new IllegalArgumentException("the length of cipherKey must be greater than 16");
+            }
+            this.cipherKey = cipherKey;
             return this;
         }
 
@@ -135,9 +122,6 @@ public final class TrojanConfig {
         }
 
         private void initWithDefaultValues() {
-            if (deviceInfo == null) {
-                deviceInfo = AppUtils.getDeviceModel() + "," + AppUtils.getSDKInt();
-            }
             if (userInfo == null) {
                 userInfo = "";
             }
@@ -147,7 +131,6 @@ public final class TrojanConfig {
                 logDir = logDir + File.separator + AppUtils.getCurProcessName(context);
             }
         }
-
     }
 
 }

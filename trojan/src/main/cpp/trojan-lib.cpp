@@ -23,25 +23,26 @@ extern "C" {
 std::string jstring2string(JNIEnv *env, jstring jStr) {
     const jclass stringClass = env->GetObjectClass(jStr);
     const jmethodID getBytes = env->GetMethodID(stringClass, "getBytes", "(Ljava/lang/String;)[B");
-    const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes,
-                                                                       env->NewStringUTF("UTF-8"));
+    const jstring utf = env->NewStringUTF("UTF-8");
+    const jbyteArray stringJbytes = (jbyteArray) env->CallObjectMethod(jStr, getBytes, utf);
 
     size_t length = (size_t) env->GetArrayLength(stringJbytes);
     jbyte *pBytes = env->GetByteArrayElements(stringJbytes, NULL);
 
     std::string ret = std::string((char *) pBytes, length);
-    env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_ABORT);
 
-    env->DeleteLocalRef(stringJbytes);
     env->DeleteLocalRef(stringClass);
+    env->DeleteLocalRef(utf);
+    env->ReleaseByteArrayElements(stringJbytes, pBytes, JNI_COMMIT);
 
     return ret;
 }
 
-jlong Java_me_ele_trojan_record_impl_MmapLogWriter_nativeInit(JNIEnv *env, jobject object,
-                                                              jstring basic_info, jstring dir,
-                                                              jboolean encrypt_basic,
-                                                              jstring encrypt_method, jstring key) {
+jlong Java_me_ele_trojan_record_impl_MmapLogWriter_nativeInit(JNIEnv *env,
+                                                              jobject object,
+                                                              jstring basic_info,
+                                                              jstring dir,
+                                                              jstring key) {
 
     //////////////////////////////////////
     std::string methodName = "nativeInit";
@@ -49,26 +50,28 @@ jlong Java_me_ele_trojan_record_impl_MmapLogWriter_nativeInit(JNIEnv *env, jobje
     ////////////////////////////////////
 
     LogWriter *logWriter = new LogWriter();
-    std::string basicInfo = jstring2string(env, basic_info);
-    std::string logDir = jstring2string(env, dir);
-    //注意:encrypt_method和key有可能为null
-    std::string encryptMethod;
-    if (encrypt_method != NULL) {
-        encryptMethod = jstring2string(env, encrypt_method);
+    std::string basicInfo;
+    if (basic_info != NULL) {
+        basicInfo = jstring2string(env, basic_info);
+        env->DeleteLocalRef(basic_info);
     }
-    //TODO 如果对于encryptKey有长度要求的话，可以考虑进行统一的处理(比如截断，填充或者是进行MD5处理)得到定长的key
+    std::string logDir;
+    if (dir != NULL) {
+        logDir = jstring2string(env, dir);
+        env->DeleteLocalRef(dir);
+    }
+    //注意:encrypt_method和key有可能为null
     std::string encryptKey;
     if (key != NULL) {
         encryptKey = jstring2string(env, key);
+        env->DeleteLocalRef(key);
     }
 
-    ErrInfo *errInfo = logWriter->init(env, basicInfo, logDir, (bool) encrypt_basic, encryptMethod,
-                                       encryptKey);
-
-    throwExceptionIfNeed(env, errInfo);
-
+    ErrInfo *errInfo = logWriter->init(env, basicInfo, logDir, encryptKey);
     if (errInfo != NULL) {
+        throwExceptionIfNeed(env, errInfo);
         delete errInfo;
+        errInfo = NULL;
     }
 
     return reinterpret_cast<jlong>(logWriter);
@@ -79,21 +82,18 @@ jlong Java_me_ele_trojan_record_impl_MmapLogWriter_nativeWrite(JNIEnv *env,
                                                                jlong log_writer_object,
                                                                jstring msg_content,
                                                                jboolean crypt) {
-    //////////////////////////////////////
-    std::string methodName = "nativeWrite";
-    print(env, methodName.c_str());
-    ////////////////////////////////////
 
-    //TODO 这里要加上判空操作
-    const char *msg = env->GetStringUTFChars(msg_content, 0);
     LogWriter *logWriter = reinterpret_cast<LogWriter *>(log_writer_object);
-    ErrInfo *errInfo = logWriter->writeLog(env, msg, (bool) crypt);
-    if (errInfo != NULL) {
-        throwExceptionIfNeed(env, errInfo);
-        delete errInfo;
+    if (msg_content != NULL) {
+        const char *msg = env->GetStringUTFChars(msg_content, JNI_FALSE);
+        ErrInfo *errInfo = logWriter->writeLog(env, msg, static_cast<bool>(crypt));
+        env->ReleaseStringUTFChars(msg_content, msg);
+        if (errInfo != NULL) {
+            throwExceptionIfNeed(env, errInfo);
+            delete errInfo;
+            errInfo = NULL;
+        }
     }
-    env->ReleaseStringUTFChars(msg_content, msg);
-
     return reinterpret_cast<jlong>(logWriter);
 }
 
@@ -120,7 +120,12 @@ void Java_me_ele_trojan_record_impl_MmapLogWriter_nativeCloseAndRenew(JNIEnv *en
     ////////////////////////////////////
 
     LogWriter *logWriter = reinterpret_cast<LogWriter *>(logWriterObject);
-    logWriter->closeAndRenew(env);
+    ErrInfo *errInfo = logWriter->closeAndRenew(env);
+    if (errInfo != NULL) {
+        throwExceptionIfNeed(env, errInfo);
+        delete errInfo;
+        errInfo = NULL;
+    }
 }
 
 #ifdef __cplusplus

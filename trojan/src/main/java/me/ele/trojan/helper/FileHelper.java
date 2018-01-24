@@ -3,6 +3,7 @@ package me.ele.trojan.helper;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
+import android.os.StatFs;
 import android.text.TextUtils;
 
 import java.io.File;
@@ -11,12 +12,13 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.zip.GZIPOutputStream;
 
 import me.ele.trojan.config.TrojanConstants;
-import me.ele.trojan.log.Logger;
 import me.ele.trojan.utils.AppUtils;
 import me.ele.trojan.utils.DateUtils;
 import me.ele.trojan.utils.IOUtil;
@@ -26,56 +28,71 @@ import me.ele.trojan.utils.IOUtil;
  */
 public final class FileHelper {
 
-    public static File getLogDir(Context context) {
+    public static File getTempDir(Context context) {
         if (context == null) {
             return null;
         }
-        File dir = null;
-        String cacheDirPath = getSDDirPath();
-        if (!TextUtils.isEmpty(cacheDirPath)) {
-            StringBuilder pathBuilder = new StringBuilder();
-            pathBuilder.append(cacheDirPath)
-                    .append(File.separator)
-                    .append(getDirName(context))
-                    .append(File.separator)
-                    .append(AppUtils.getCurProcessName(context));
-            dir = new File(pathBuilder.toString());
-        }
+
+        File dir = getCacheDirFile(context);
         if (dir == null) {
-            StringBuilder pathBuilder = new StringBuilder();
-            pathBuilder.append(getCacheDir(context).getAbsolutePath())
-                    .append(File.separator)
-                    .append(TrojanConstants.LOG_DIR)
-                    .append(File.separator)
-                    .append(AppUtils.getCurProcessName(context));
-            dir = new File(pathBuilder.toString());
-        }
-        if (!dir.exists()) {
-            dir.mkdirs();
+            dir = getSDDirFile(context);
         }
         return dir;
     }
 
-    private static String getSDDirPath() {
-        if (Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-            return Environment.getExternalStorageDirectory().getAbsolutePath();
+    public static File getLogDir(Context context) {
+        if (context == null) {
+            return null;
         }
-        return null;
+
+        File dir = getSDDirFile(context);
+        if (dir == null) {
+            dir = getCacheDirFile(context);
+        }
+        return dir;
     }
 
-    private static String getDirName(Context context) {
+    public static String getDirName(Context context) {
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append(context.getApplicationContext().getPackageName());
-        stringBuilder.append(TrojanConstants.TROJAN_LOG);
+        stringBuilder.append(TrojanConstants.LOG_DIR);
+        stringBuilder.append(File.separator);
+        stringBuilder.append(AppUtils.getCurProcessName(context));
         return stringBuilder.toString();
     }
 
-    private static File getCacheDir(Context context) {
-        try {
-            return context.getExternalCacheDir();
-        } catch (Exception ex) {
-            return context.getCacheDir();
+    private static File getSDDirFile(Context context) {
+        if (context == null || !Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+            return null;
         }
+        File sdFile = Environment.getExternalStorageDirectory();
+        if (sdFile != null) {
+            sdFile = new File(sdFile, getDirName(context));
+            if (!sdFile.exists() || !sdFile.isDirectory()) {
+                sdFile.mkdirs();
+            }
+        }
+        return sdFile;
+    }
+
+    private static File getCacheDirFile(Context context) {
+        if (context == null) {
+            return null;
+        }
+        File cacheFile;
+        try {
+            cacheFile = context.getCacheDir();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            cacheFile = context.getExternalCacheDir();
+        }
+
+        if (cacheFile != null) {
+            cacheFile = new File(cacheFile, getDirName(context));
+            if (!cacheFile.exists() || !cacheFile.isDirectory()) {
+                cacheFile.mkdirs();
+            }
+        }
+        return cacheFile;
     }
 
     /**
@@ -85,22 +102,23 @@ public final class FileHelper {
      */
     public static File renameToUp(File file) {
         if (file == null || !file.exists()) {
-            return null;
+            return file;
         }
 
-        StringBuilder rename = new StringBuilder();
-        rename.append(file.getParentFile().getPath());
-        rename.append(File.separator);
-        rename.append(file.getName());
-        rename.append(TrojanConstants.UP);
-        File targetFile = new File(rename.toString());
+        StringBuilder renameBuilder = new StringBuilder();
+        renameBuilder.append(file.getParentFile().getAbsolutePath());
+        renameBuilder.append(File.separator);
+        renameBuilder.append(file.getName());
+        renameBuilder.append(TrojanConstants.UP);
+
+        File targetFile = new File(renameBuilder.toString());
         if (targetFile.exists()) {
             targetFile.delete();
         }
         if (file.renameTo(targetFile)) {
             return targetFile;
         }
-        return null;
+        return file;
     }
 
     /**
@@ -111,7 +129,7 @@ public final class FileHelper {
      * @return
      * @throws IOException
      */
-    public static File save2GZIPFile(File sourceFile) throws IOException {
+    public static File save2GZIPFile(File sourceFile, String parentPath) throws IOException {
 
         if (sourceFile == null || !sourceFile.isFile()) {
             return null;
@@ -129,8 +147,8 @@ public final class FileHelper {
             if (sourceFile.getName().contains(TrojanConstants.MMAP)) {
                 deleteBlankContent(sourceFile);
             }
+            File gzipFile = createGZIPFile(sourceFile, parentPath);
             fis = new FileInputStream(sourceFile);
-            File gzipFile = createGZIPFile(sourceFile);
             fos = new FileOutputStream(gzipFile);
             gos = new GZIPOutputStream(fos);
             byte buffer[] = new byte[1024];
@@ -155,9 +173,13 @@ public final class FileHelper {
         }
     }
 
-    private static File createGZIPFile(File sourceFile) throws IOException {
+    private static File createGZIPFile(File sourceFile, String parentPath) throws IOException {
         StringBuilder gzPathBuilder = new StringBuilder();
-        gzPathBuilder.append(sourceFile.getParentFile().getAbsoluteFile());
+        if (!TextUtils.isEmpty(parentPath)) {
+            gzPathBuilder.append(parentPath);
+        } else {
+            gzPathBuilder.append(sourceFile.getParentFile().getAbsoluteFile());
+        }
         gzPathBuilder.append(File.separator);
         gzPathBuilder.append(getGZIPFileName(sourceFile));
 
@@ -173,6 +195,43 @@ public final class FileHelper {
         return sourceFile.getName() + TrojanConstants.GZ;
     }
 
+    public static File preHandleLogFile(File logFile, String renameParentPath, boolean needGZ) {
+        if (logFile == null || !logFile.isFile()) {
+            return logFile;
+        }
+        if (System.currentTimeMillis() - logFile.lastModified() > TrojanConstants.FIVE_DAY_MILLS) {
+            logFile.delete();
+            return null;
+        }
+        String fileName = logFile.getName();
+        if (TextUtils.isEmpty(fileName)) {
+            logFile.delete();
+            return null;
+        }
+
+        if (fileName.endsWith(TrojanConstants.GZ)) {
+            return logFile;
+        }
+
+        boolean hasContainUp = fileName.endsWith(TrojanConstants.UP);
+        boolean hasContainToday = fileName.startsWith(DateUtils.getDate());
+        if (hasContainUp || !hasContainToday) {
+
+            if (!hasContainUp) {
+                logFile = renameToUp(logFile);
+            }
+
+            if (needGZ) {
+                try {
+                    return FileHelper.save2GZIPFile(logFile, renameParentPath);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Note: this is a time-consuming operation
      * <p>
@@ -180,101 +239,98 @@ public final class FileHelper {
      *
      * @param context
      */
-    public static List<File> cleanUpLogFile(Context context, String logDir) {
-        if (context == null || TextUtils.isEmpty(logDir)) {
+    public static List<File> cleanUpLogFile(Context context, String logDirPath) {
+        if (context == null) {
             return null;
         }
-        File dir = new File(logDir);
-        if (dir == null || !dir.exists()) {
-            return null;
-        }
-        File[] files = dir.listFiles();
-        if (files == null || files.length == 0) {
-            return null;
-        }
-        final List<File> gzFileList = new LinkedList<>();
-        String todayDate = DateUtils.getDate();
-        long currentTime = System.currentTimeMillis();
-        for (File logFile : files) {
-            if (logFile == null || !logFile.isFile()) {
-                continue;
-            }
-            // delete the overdue log files
-            if (currentTime - logFile.lastModified() > TrojanConstants.FIVE_DAY_MILLS) {
-                logFile.delete();
-                continue;
-            }
-            String fileName = logFile.getName();
-            if (fileName.endsWith(TrojanConstants.GZ)) {
-                gzFileList.add(logFile);
-                continue;
-            }
-            // except today log file, need compress the log files if it is not gz file
-            if (!fileName.contains(todayDate)) {
-                try {
-                    File targetFile = logFile;
-                    // rename the log file
-                    if (!fileName.contains(TrojanConstants.UP)) {
-                        targetFile = FileHelper.renameToUp(logFile);
+        final List<File> allLogFiles = new LinkedList<>();
+
+        File tempDir = getTempDir(context);
+        if (tempDir != null) {
+            File[] files = tempDir.listFiles();
+            if (files != null && files.length > 0) {
+                for (File logFile : files) {
+                    if (logFile == null || !logFile.isFile()) {
+                        continue;
                     }
-                    // compress the log file use GZ
-                    File gzFile = FileHelper.save2GZIPFile(targetFile);
-                    if (gzFile != null && gzFile.isFile()) {
-                        gzFileList.add(gzFile);
-                    }
-                } catch (IOException e) {
-                    Logger.e("FileHelper-->cleanUpLogFile:" + e);
-                    e.printStackTrace();
+                    allLogFiles.add(logFile);
                 }
             }
         }
+
+        if (!TextUtils.isEmpty(logDirPath)) {
+            File sdDir = new File(logDirPath);
+            File[] files = sdDir.listFiles();
+            if (files != null && files.length > 0) {
+                for (File logFile : files) {
+                    if (logFile == null || !logFile.isFile()) {
+                        continue;
+                    }
+                    allLogFiles.add(logFile);
+                }
+            }
+        }
+
+        if (allLogFiles.size() == 0) {
+            return null;
+        }
+
+        Set<String> logPathSet = new HashSet<>();
+        for (File logFile : allLogFiles) {
+            if (logFile == null || !logFile.isFile()) {
+                continue;
+            }
+            File gzFile = preHandleLogFile(logFile, logDirPath, true);
+            if (gzFile != null) {
+                logPathSet.add(gzFile.getAbsolutePath());
+            }
+        }
+
+        final List<File> gzFileList = new LinkedList<>();
+        for (String logPath : logPathSet) {
+            File gzFile = new File(logPath);
+            if (gzFile.isFile()) {
+                gzFileList.add(gzFile);
+            }
+        }
+
         return gzFileList;
     }
 
-    public static List<File> renameToUpAllLogFileIfNecessary(String user, String logDir, String writeFileName) {
-        if (TextUtils.isEmpty(logDir) || TextUtils.isEmpty(writeFileName)) {
+    public static List<File> renameToUpAllIfNeed(Context context, String writeFileName, String logDirPath) {
+        File tempDir = getTempDir(context);
+        if (tempDir == null) {
             return null;
         }
-        final File dir = new File(logDir);
-        if (dir == null || !dir.isDirectory()) {
-            return null;
-        }
-        final File[] files = dir.listFiles();
+
+        final File[] files = tempDir.listFiles();
         if (files == null || files.length == 0) {
             return null;
         }
-        final long currentTime = System.currentTimeMillis();
-        final List<File> gzFileList = new LinkedList<>();
+
+        final List<File> logFileList = new LinkedList<>();
         for (File logFile : files) {
             if (logFile == null || !logFile.isFile()) {
                 continue;
             }
-            // delete the overdue log files
-            if (currentTime - logFile.lastModified() > TrojanConstants.FIVE_DAY_MILLS) {
+            String fileName = logFile.getName();
+
+            // delete the log file when fileName is empty
+            if (TextUtils.isEmpty(fileName)) {
                 logFile.delete();
                 continue;
             }
+            // skip the writing file
+            if (writeFileName.equals(fileName)) {
+                continue;
+            }
 
-            String fileName = logFile.getName();
-            if (TextUtils.isEmpty(fileName)) {
-                continue;
+            logFile = preHandleLogFile(logFile, logDirPath, false);
+            if (logFile != null) {
+                logFileList.add(logFile);
             }
-            if (fileName.equals(writeFileName)) {
-                continue;
-            }
-            if (fileName.contains(TrojanConstants.GZ)) {
-                gzFileList.add(logFile);
-                continue;
-            }
-            if (!fileName.contains(TrojanConstants.UP)) {
-                File renameFile = FileHelper.renameToUp(logFile);
-                if (renameFile != null && renameFile.isFile()) {
-                    logFile = renameFile;
-                }
-            }
-            gzFileList.add(logFile);
         }
-        return gzFileList;
+        return logFileList;
     }
 
     public static void deleteBlankContent(File file) {
@@ -303,7 +359,33 @@ public final class FileHelper {
             e.printStackTrace();
         } finally {
             IOUtil.closeQuietly(raf);
+            /**
+             * Get the free space of sdcard in Mb
+             *
+             * @return
+             */
         }
     }
 
+    public static long getSDFreeSize() {
+        try {
+            File path = Environment.getExternalStorageDirectory();
+            StatFs sf = new StatFs(path.getPath());
+            long blockSize = sf.getBlockSize();
+            long freeBlocks = sf.getAvailableBlocks();
+            return (freeBlocks * blockSize) / 1024 / 1024;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return TrojanConstants.MIN_SDCARD_FREE_SPACE_MB;
+    }
+
+    /**
+     * determine whether the remaining space of Sdcard is greater than 50
+     *
+     * @return
+     */
+    public static boolean isSDEnough() {
+        return getSDFreeSize() >= TrojanConstants.MIN_SDCARD_FREE_SPACE_MB;
+    }
 }

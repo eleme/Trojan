@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface PrepareUploadListener {
 
-    void readyToUpload(List<File> waitUploadFileList);
+    void readyToUpload();
 
     void failToReady();
 }

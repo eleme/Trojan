@@ -13,6 +13,7 @@
 #define UNMMAP_EXIT -6
 #define LOCK_EXIT -7
 #define UNLOCK_EXIT -8
+#define ACCESS_EXIT -9
 
 #define SUCCESS 0
 

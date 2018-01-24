@@ -1,6 +1,5 @@
 package me.ele.trojan.lancet;
 
-
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
@@ -16,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -77,25 +77,45 @@ public class LancetHook {
     @Insert("onClick")
     @ImplementedInterface(value = "android.view.View$OnClickListener", scope = Scope.LEAF)
     public void onClick(View v) throws Throwable {
-        if (v != null) {
-            List<String> msgList = new LinkedList<>();
-            msgList.add(v.getClass().getName());
-            msgList.add(String.valueOf(v.getId()));
-
-            //还要获取到View在哪个页面，即如果是在Fragment中则打印出Fragment信息，否则打印出Activity信息
-            String pageInfo = getPageInfo(v);
-            if (TextUtils.isEmpty(pageInfo)) {
-                msgList.add(This.get().toString());
-            } else {
-                msgList.add(pageInfo);
-            }
-
-
-            setIndexIfNeed(v, msgList);
-
-            Trojan.log(LogConstants.VIEW_CLICK_TAG, msgList);
-        }
+        hookClick(v);
         Origin.callVoid();
+    }
+
+    public static void hookClick(View v) {
+        if (v == null) {
+            return;
+        }
+        List<String> msgList = new LinkedList<>();
+        msgList.add(v.getClass().getName());
+        if (v.getId() != View.NO_ID) {
+            try {
+                msgList.add(v.getResources().getResourceName(v.getId()));
+            } catch (Exception e) {
+                e.printStackTrace();
+                msgList.add("~");
+            }
+        } else {
+            msgList.add("~");
+        }
+        //还要获取到View在哪个页面，即如果是在Fragment中则打印出Fragment信息，否则打印出Activity信息
+        String pageInfo = getPageInfo(v);
+        if (TextUtils.isEmpty(pageInfo)) {
+            msgList.add(This.get().toString());
+        } else {
+            msgList.add(pageInfo);
+        }
+        if (v instanceof TextView
+                && ((TextView) v).getText() != null
+                && ((TextView) v).getText().toString() != null) {
+            msgList.add(((TextView) v).getText().toString());
+        } else {
+            msgList.add("~");
+        }
+        //如果是ListView或RecycleView中的某个item,则需要打印出它是第几个ItemView,现详细一点的话甚至需要打印出ItemView中TextView中的信息
+        //TODO 争光报了bug,先注释这个功能
+        //setIndexIfNeed(v, msgList);
+
+        Trojan.log(LogConstants.VIEW_CLICK_TAG, msgList);
     }
 
     /**
@@ -250,193 +270,232 @@ public class LancetHook {
     }
 
     @TargetClass(value = FRAGMENT_CLASS, scope = Scope.LEAF)
+    @Insert(value = "onCreate", mayCreateSuper = true)
+    public void fragOnCreate(@Nullable Bundle savedInstanceState) {
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onCreate:Bundle" + (savedInstanceState == null ? "=null" : "!=null"));
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
+        Origin.callVoid();
+    }
+
+    @TargetClass(value = SUPPORT_FRAGMENT_CLASS, scope = Scope.LEAF)
+    @Insert(value = "onCreate", mayCreateSuper = true)
+    public void supportFragOnCreate(@Nullable Bundle savedInstanceState) {
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onCreate:Bundle" + (savedInstanceState == null ? "=null" : "!=null"));
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
+        Origin.callVoid();
+    }
+
+    @TargetClass(value = FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onStart", mayCreateSuper = true)
     public void fragOnStart() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onStart:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onStart");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = SUPPORT_FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onStart", mayCreateSuper = true)
     public void supportFragOnStart() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onStart:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onStart");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onResume", mayCreateSuper = true)
     public void fragOnResume() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onResume:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onResume");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = SUPPORT_FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onResume", mayCreateSuper = true)
     public void supportFragOnResume() {
-        //recordFragLifeEvent("onResume");
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onResume:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onResume");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onPause", mayCreateSuper = true)
     public void fragOnPause() {
-        //recordFragLifeEvent("onPause");
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onPause:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onPause");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = SUPPORT_FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onPause", mayCreateSuper = true)
     public void supportFragOnPause() {
-        //recordFragLifeEvent("onPause");
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onPause:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onPause");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onHiddenChanged", mayCreateSuper = true)
     public void fragOnHiddenChanged() {
-        //recordFragLifeEvent("onHiddenChanged");
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onHiddenChanged:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onHiddenChanged");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = SUPPORT_FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onHiddenChanged", mayCreateSuper = true)
     public void supportFragOnHiddenChanged() {
-        //recordFragLifeEvent("onHiddenChanged");
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onHiddenChanged:" + fragName);
-        Origin.callVoid();
-    }
-
-    @TargetClass(value = FRAGMENT_CLASS, scope = Scope.LEAF)
-    @Insert(value = "setUserVisibleHint", mayCreateSuper = true)
-    public void fragSetUserVisibleHint(boolean isVisibleToUser) {
-        //recordFragLifeEvent("setUserVisibleHint(" + isVisibleToUser + ")");
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "setUserVisibleHint:" + fragName);
-        Origin.callVoid();
-    }
-
-    @TargetClass(value = SUPPORT_FRAGMENT_CLASS, scope = Scope.LEAF)
-    @Insert(value = "setUserVisibleHint", mayCreateSuper = true)
-    public void supportFragSetUserVisibleHint(boolean isVisibleToUser) {
-        //recordFragLifeEvent("setUserVisibleHint(" + isVisibleToUser + ")");
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "setUserVisibleHint:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onHiddenChanged");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onStop", mayCreateSuper = true)
     public void fragOnStop() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onStop:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onStop");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = SUPPORT_FRAGMENT_CLASS, scope = Scope.LEAF)
     @Insert(value = "onStop", mayCreateSuper = true)
     public void supportFragOnStop() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "onStop:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("onStop");
+        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.app.Dialog", scope = Scope.LEAF)
     @Insert(value = "show", mayCreateSuper = true)
     public void showDialog() {
-        String dialogName = This.get().toString();
-        Trojan.log(LogConstants.DIALOG, "show:" + dialogName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("show");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.app.Dialog", scope = Scope.LEAF)
     @Insert(value = "hide", mayCreateSuper = true)
     public void hideDialog() {
-        String dialogName = This.get().toString();
-        Trojan.log(LogConstants.DIALOG, "hide:" + dialogName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("hide");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.app.Dialog", scope = Scope.LEAF)
     @Insert(value = "dismiss", mayCreateSuper = true)
     public void dismissDialog() {
-        String dialogName = This.get().toString();
-        Trojan.log(LogConstants.DIALOG, "dismiss:" + dialogName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("dismiss");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.app.DialogFragment", scope = Scope.LEAF)
     @Insert(value = "show", mayCreateSuper = true)
     public void showDialogFragment(FragmentManager manager, String tag) {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "show(FragmentManager,String):" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("show");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.app.DialogFragment", scope = Scope.LEAF)
     @Insert(value = "show", mayCreateSuper = true)
     public int showDialogFragment(FragmentTransaction transaction, String tag) {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "show(FragmentTransaction,String):" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("show");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         return (int) Origin.call();
     }
 
     @TargetClass(value = "android.support.v4.app.DialogFragment", scope = Scope.LEAF)
     @Insert(value = "show", mayCreateSuper = true)
     public void showSupportDialogFragment(android.support.v4.app.FragmentManager manager, String tag) {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "show(FragmentManager,String):" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("show");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.support.v4.app.DialogFragment", scope = Scope.LEAF)
     @Insert(value = "show", mayCreateSuper = true)
     public int showSupportDialogFragment(android.support.v4.app.FragmentTransaction transaction, String tag) {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "show(FragmentTransaction,String):" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("show");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         return (int) Origin.call();
     }
 
     @TargetClass(value = "android.app.DialogFragment", scope = Scope.LEAF)
     @Insert(value = "dismiss", mayCreateSuper = true)
     public void dismissDialogFragment() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "dismiss:" + fragName);
-        Origin.callVoid();
-    }
-
-    @TargetClass(value = "android.app.DialogFragment", scope = Scope.LEAF)
-    @Insert(value = "dismissAllowingStateLoss", mayCreateSuper = true)
-    public void dismissAllowingDialogFragment() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "dismissAllowingStateLoss:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("dismiss");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.support.v4.app.DialogFragment", scope = Scope.LEAF)
     @Insert(value = "dismiss", mayCreateSuper = true)
     public void dismissSupportDialogFragment() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "dismiss:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("dismiss");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
+        Origin.callVoid();
+    }
+
+    @TargetClass(value = "android.app.DialogFragment", scope = Scope.LEAF)
+    @Insert(value = "dismissAllowingStateLoss", mayCreateSuper = true)
+    public void dismissAllowingDialogFragment() {
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("dismissAllowingStateLoss");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 
     @TargetClass(value = "android.support.v4.app.DialogFragment", scope = Scope.LEAF)
     @Insert(value = "dismissAllowingStateLoss", mayCreateSuper = true)
     public void dismissAllowingSupportDialogFragment() {
-        String fragName = This.get().toString();
-        Trojan.log(LogConstants.FRAGMENT_LIFE_TAG, "dismissAllowingStateLoss:" + fragName);
+        List<String> msgList = new LinkedList<>();
+        msgList.add(This.get().getClass().getName());
+        msgList.add("dismissAllowingStateLoss");
+        Trojan.log(LogConstants.DIALOG_TAG, msgList);
         Origin.callVoid();
     }
 

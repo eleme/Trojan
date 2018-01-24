@@ -5,7 +5,6 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -42,14 +41,16 @@ public class LogUploader implements ILogUploader {
         this.logRecorder = logRecorder;
 
         // should check upload file when init
-        if (PermissionHelper.hasWriteAndReadStoragePermission(context)) {
-            ExecutorDispatcher.getInstance().executePrepareUpload(new Runnable() {
-                @Override
-                public void run() {
-                    FileHelper.cleanUpLogFile(context, trojanConfig.getLogDir());
+        ExecutorDispatcher.getInstance().executePrepareUpload(new Runnable() {
+            @Override
+            public void run() {
+                if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
+                    Logger.e("no permission for cleanUp");
+                    return;
                 }
-            });
-        }
+                FileHelper.cleanUpLogFile(context, trojanConfig.getLogDir());
+            }
+        });
     }
 
     @Override
@@ -66,33 +67,13 @@ public class LogUploader implements ILogUploader {
         // execute upload task after notify the LogRecorder module to close log file
         logRecorder.prepareUpload(new PrepareUploadListener() {
             @Override
-            public void readyToUpload(final List<File> waitUploadFileList) {
+            public void readyToUpload() {
                 Logger.i("LogUploader-->readyToUpload");
                 ExecutorDispatcher.getInstance().executePrepareUpload(new Runnable() {
                     @Override
                     public void run() {
-                        final List<File> gzFileList = new LinkedList<>();
-                        if (waitUploadFileList != null && waitUploadFileList.size() > 0) {
-                            for (File logFile : waitUploadFileList) {
-                                if (logFile == null || !logFile.isFile()) {
-                                    continue;
-                                }
-                                try {
-                                    File gz = FileHelper.save2GZIPFile(logFile);
-                                    if (gz != null && gz.isFile()) {
-                                        gzFileList.add(gz);
-                                    }
-                                } catch (IOException e) {
-                                    e.printStackTrace();
-                                }
-                            }
-                        }
-                        handler.post(new Runnable() {
-                            @Override
-                            public void run() {
-                                waitUploadListener.onReadyToUpload(trojanConfig.getUserInfo(), trojanConfig.getDeviceInfo(), gzFileList);
-                            }
-                        });
+                        final List<File> gzFileList = FileHelper.cleanUpLogFile(context, trojanConfig.getLogDir());
+                        notifyPrepareListener(waitUploadListener, true, gzFileList);
                     }
                 });
 
@@ -102,6 +83,22 @@ public class LogUploader implements ILogUploader {
             public void failToReady() {
                 Logger.e("LogUploader-->failToReady");
                 waitUploadListener.onReadyFail();
+            }
+        });
+    }
+
+    private void notifyPrepareListener(final WaitUploadListener waitUploadListener, final boolean isSuccess, final List<File> gzFileList) {
+        if (waitUploadListener == null) {
+            return;
+        }
+        handler.post(new Runnable() {
+            @Override
+            public void run() {
+                if (isSuccess && gzFileList != null && gzFileList.size() > 0) {
+                    waitUploadListener.onReadyToUpload(trojanConfig.getUserInfo(), trojanConfig.getDeviceId(), gzFileList);
+                } else {
+                    waitUploadListener.onReadyFail();
+                }
             }
         });
     }

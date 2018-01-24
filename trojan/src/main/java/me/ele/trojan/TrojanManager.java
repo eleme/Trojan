@@ -141,6 +141,7 @@ public class TrojanManager {
         IntentFilter filter = new IntentFilter();
         filter.addAction(Intent.ACTION_BATTERY_CHANGED);
         filter.addAction(ConnectivityManager.CONNECTIVITY_ACTION);
+        filter.addAction(Intent.ACTION_TIME_TICK);
         context.registerReceiver(this.trojanReceiver, filter);
     }
 }

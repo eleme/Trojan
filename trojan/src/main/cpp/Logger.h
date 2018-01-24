@@ -24,8 +24,7 @@ __attribute__((format(printf, 3, 4)))
 
 int trojan_log_vprint(int prio, const char *tag, const char *fmt, va_list ap);
 
-inline static int trojan_log_write(int prio, const char *tag, const char *msg)
-{
+inline static int trojan_log_write(int prio, const char *tag, const char *msg) {
     return trojan_get_log_function()(prio, tag, msg);
 }
 

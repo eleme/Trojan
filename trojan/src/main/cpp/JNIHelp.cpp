@@ -22,8 +22,7 @@ public:
 
     void reset(T localRef = NULL) {
         if (mLocalRef != NULL) {
-            (*mEnv)->DeleteLocalRef(reinterpret_cast<JNIEnv *>(mEnv),
-                                    mLocalRef);
+            (*mEnv)->DeleteLocalRef(reinterpret_cast<JNIEnv *>(mEnv), mLocalRef);
             mLocalRef = localRef;
         }
     }
@@ -49,41 +48,36 @@ static char *getExceptionSummary0(C_JNIEnv *env, jthrowable exception) {
     JNIEnv *e = reinterpret_cast<JNIEnv *>(env);
 
     /* get the name of the exception's class */
-    scoped_local_ref<jclass> exceptionClass(
-            env, (*env)->GetObjectClass(e, exception)); // can't fail
-    scoped_local_ref<jclass> classClass(
-            env,
-            (*env)->GetObjectClass(
-                    e, exceptionClass.get())); // java.lang.Class, can't fail
-    jmethodID classGetNameMethod = (*env)->GetMethodID(
-            e, classClass.get(), "getName", "()Ljava/lang/String;");
-    scoped_local_ref<jstring> classNameStr(
-            env,
-            (jstring) (*env)->CallObjectMethod(e, exceptionClass.get(),
-                                               classGetNameMethod));
+    scoped_local_ref<jclass> exceptionClass(env,
+                                            (*env)->GetObjectClass(e, exception)); // can't fail
+    scoped_local_ref<jclass> classClass(env, (*env)->GetObjectClass(e,
+                                                                    exceptionClass.get())); // java.lang.Class, can't fail
+    jmethodID classGetNameMethod = (*env)->GetMethodID(e, classClass.get(), "getName",
+                                                       "()Ljava/lang/String;");
+    scoped_local_ref<jstring> classNameStr(env, (jstring) (*env)->CallObjectMethod(e,
+                                                                                   exceptionClass.get(),
+                                                                                   classGetNameMethod));
     if (classNameStr.get() == NULL) {
         return NULL;
     }
 
     /* get printable string */
-    const char *classNameChars =
-            (*env)->GetStringUTFChars(e, classNameStr.get(), NULL);
+    const char *classNameChars = (*env)->GetStringUTFChars(e, classNameStr.get(), NULL);
     if (classNameChars == NULL) {
         return NULL;
     }
 
     /* if the exception has a detail message, get that */
-    jmethodID getMessage = (*env)->GetMethodID(
-            e, exceptionClass.get(), "getMessage", "()Ljava/lang/String;");
-    scoped_local_ref<jstring> messageStr(
-            env, (jstring) (*env)->CallObjectMethod(e, exception, getMessage));
+    jmethodID getMessage = (*env)->GetMethodID(e, exceptionClass.get(), "getMessage",
+                                               "()Ljava/lang/String;");
+    scoped_local_ref<jstring> messageStr(env, (jstring) (*env)->CallObjectMethod(e, exception,
+                                                                                 getMessage));
     if (messageStr.get() == NULL) {
         return strdup(classNameChars);
     }
 
     char *result = NULL;
-    const char *messageChars =
-            (*env)->GetStringUTFChars(e, messageStr.get(), NULL);
+    const char *messageChars = (*env)->GetStringUTFChars(e, messageStr.get(), NULL);
     if (messageChars != NULL) {
         asprintf(&result, "%s: %s", classNameChars, messageChars);
         (*env)->ReleaseStringUTFChars(e, messageStr.get(), messageChars);
@@ -91,7 +85,6 @@ static char *getExceptionSummary0(C_JNIEnv *env, jthrowable exception) {
         (*env)->ExceptionClear(e); // clear OOM
         asprintf(&result, "%s: <error getting message>", classNameChars);
     }
-
     (*env)->ReleaseStringUTFChars(e, classNameStr.get(), classNameChars);
     return result;
 }
@@ -118,8 +111,7 @@ doJniThrowException(C_JNIEnv *env, const char *className, const char *msg) {
 
     if ((*env)->ExceptionCheck(e)) {
         /* TODO: consider creating the new exception with this as "cause" */
-        scoped_local_ref<jthrowable> exception(env,
-                                               (*env)->ExceptionOccurred(e));
+        scoped_local_ref<jthrowable> exception(env, (*env)->ExceptionOccurred(e));
         (*env)->ExceptionClear(e);
 
         if (exception.get() != NULL) {
@@ -160,7 +152,12 @@ void doThrowIOE(JNIEnv *env, const char *msg) {
 void print(JNIEnv *env, const char *string) {
     jclass log = env->FindClass("android/util/Log");
     jmethodID v = env->GetStaticMethodID(log, "v", "(Ljava/lang/String;Ljava/lang/String;)I");
-    env->CallStaticIntMethod(log, v, env->NewStringUTF("Mmap"), env->NewStringUTF(string));
+    jstring mmap = env->NewStringUTF("Mmap");
+    jstring msg = env->NewStringUTF(string);
+    env->CallStaticIntMethod(log, v, mmap, msg);
+    env->DeleteLocalRef(log);
+    env->DeleteLocalRef(mmap);
+    env->DeleteLocalRef(msg);
 }
 
 
@@ -192,6 +189,8 @@ void throwExceptionIfNeed(JNIEnv *env, ErrInfo *errInfo) {
         case UNLOCK_EXIT:
             doThrowIOE(env, errInfo->errMsg);
             break;
+        case ACCESS_EXIT:
+            doThrowIOE(env, errInfo->errMsg);
         default:
             //do nothing
             break;
