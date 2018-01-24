@@ -21,7 +21,8 @@ add_library( # Sets the name of the library.
              src/main/cpp/LogWriter.cpp
              src/main/cpp/ErrInfo.cpp
              src/main/cpp/JNIHelp.cpp
-             src/main/cpp/des/DESEncrypt.cpp
+             src/main/cpp/tea/TEACipher.cpp
+             src/main/cpp/tea/base64.cpp
              )
 
 # Searches for a specified prebuilt library and stores the path as a

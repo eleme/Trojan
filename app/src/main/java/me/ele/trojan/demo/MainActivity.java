@@ -75,11 +75,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else if (viewId == R.id.btn_write_log) {
             Trojan.log(TAG, "Have a nice day from Trojan!");
         } else if (viewId == R.id.btn_write_big_log) {
-            for (int i = 0; i < 1000; i++) {
+            for (int i = 0; i < 10000; i++) {
                 Trojan.log(TAG, "Have a nice day from Trojan by " + (i + 1) + "!");
             }
         } else if (viewId == R.id.btn_write_encrypt_log) {
-            Trojan.log(TAG, "Have a nice day from Trojan!", true);
+            Trojan.log(TAG, "Have a nice day from Trojan, 饿了么物流移动组!", true);
         } else if (viewId == R.id.btn_change_user) {
             if (trojanUser.equals(DEMO_USER_A)) {
                 trojanUser = DEMO_USER_B;

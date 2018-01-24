@@ -2,17 +2,13 @@ package me.ele.trojan.record;
 
 import android.content.Context;
 
-import me.ele.trojan.encrypt.EncryptMethod;
-
 /**
  * Created by allen on 2017/11/7.
  */
 
 public interface ILogWriter {
 
-    void init(Context context, String basicInfo, String dir,
-              boolean encryptBasic, EncryptMethod encryptMethod,
-              String key) throws Throwable;
+    void init(Context context, String basicInfo, String dir, String key) throws Throwable;
 
     void write(String content, boolean cryptFlag) throws Throwable;
 

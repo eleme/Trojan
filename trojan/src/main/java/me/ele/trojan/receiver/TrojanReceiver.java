@@ -6,6 +6,10 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.os.BatteryManager;
 
+import java.text.DecimalFormat;
+import java.util.LinkedList;
+import java.util.List;
+
 import me.ele.trojan.Trojan;
 import me.ele.trojan.config.LogConstants;
 import me.ele.trojan.log.Logger;
@@ -19,14 +23,15 @@ public class TrojanReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        String action = intent.getAction();
-        Logger.i("TrojanReceiver->action:" + action);
+        final String action = intent.getAction();
+        Logger.i("TrojanReceiver-->action:" + action);
         if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
             showBatteryState(intent);
         } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
             showNetworkType(context);
+        } else if (Intent.ACTION_TIME_TICK.equals(action)) {
+            showMemoryState();
         }
-
     }
 
     private void showNetworkType(Context context) {
@@ -36,19 +41,11 @@ public class TrojanReceiver extends BroadcastReceiver {
 
     private void showBatteryState(Intent intent) {
         int status = intent.getIntExtra("status", 0);
-        int health = intent.getIntExtra("health", 0);
-        boolean present = intent.getBooleanExtra("present", false);
         int level = intent.getIntExtra("level", 0);
-        int scale = intent.getIntExtra("scale", 0);
-        int icon_small = intent.getIntExtra("icon-small", 0);
-        int plugged = intent.getIntExtra("plugged", 0);
-        int voltage = intent.getIntExtra("voltage", 0);
-        int temperature = intent.getIntExtra("temperature", 0);
-        String technology = intent.getStringExtra("technology");
-        String statusResult = "unknown";
+        String statusResult = "discharging";
         switch (status) {
             case BatteryManager.BATTERY_STATUS_UNKNOWN:
-                statusResult = "unknown";
+                statusResult = "discharging";
                 break;
             case BatteryManager.BATTERY_STATUS_CHARGING:
                 statusResult = "charging";
@@ -57,25 +54,27 @@ public class TrojanReceiver extends BroadcastReceiver {
                 statusResult = "discharging";
                 break;
             case BatteryManager.BATTERY_STATUS_NOT_CHARGING:
-                statusResult = "not charging";
+                statusResult = "discharging";
                 break;
             case BatteryManager.BATTERY_STATUS_FULL:
-                statusResult = "full";
+                statusResult = "charging";
                 break;
         }
 
-        String actionResult = "";
-        switch (plugged) {
-            case BatteryManager.BATTERY_PLUGGED_AC:
-                actionResult = "plugged ac";
-                break;
-            case BatteryManager.BATTERY_PLUGGED_USB:
-                actionResult = "plugged usb";
-                break;
-        }
+        List<String> msgList = new LinkedList<>();
+        msgList.add(String.valueOf((level * 1.00 / 100)));
+        msgList.add(statusResult);
+        Trojan.log(LogConstants.BATTERY_TAG, msgList);
+    }
 
-        Trojan.log(LogConstants.BATTERY_TAG, statusResult + LogConstants.INTERNAL_SEPERATOR + level + LogConstants.INTERNAL_SEPERATOR +
-                scale + LogConstants.INTERNAL_SEPERATOR + actionResult);
+    private void showMemoryState() {
+        try {
+            float totalMemory = (float) (Runtime.getRuntime().totalMemory() * 1.0 / (1024 * 1024));
+            DecimalFormat df = new DecimalFormat("######0.00");
+            Trojan.log(LogConstants.MEMORY_TAG, String.valueOf(df.format(totalMemory)) + "MB");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

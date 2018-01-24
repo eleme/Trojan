@@ -10,7 +10,6 @@ import java.io.OutputStreamWriter;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.ele.trojan.config.TrojanConstants;
-import me.ele.trojan.encrypt.EncryptMethod;
 import me.ele.trojan.log.Logger;
 import me.ele.trojan.record.ILogWriter;
 import me.ele.trojan.utils.DateUtils;
@@ -34,8 +33,7 @@ public class NormalLogWriter implements ILogWriter {
     private BufferedWriter bufferedWriter;
 
     @Override
-    public void init(Context context, String basicInfoContent, String dir,
-                     boolean encryptBasic, EncryptMethod encryptMethod, String key) {
+    public void init(Context context, String basicInfoContent, String dir, String key) {
         Logger.i("NormalLogWriter-->init");
         this.context = context;
         this.basicInfoContent = basicInfoContent;

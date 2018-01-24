@@ -8,8 +8,8 @@ buildscript {
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 
-def trojan_version_code = 304
-def trojan_version = "3.0.4-SNAPSHOT"
+def trojan_version_code = 305
+def trojan_version = "3.0.5"
 
 android {
 

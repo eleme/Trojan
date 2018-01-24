@@ -6,23 +6,17 @@
 #include <iostream>
 #include <sys/file.h>
 
-
 LogWriter::LogWriter() {
-
+    this->cipherStart = strlen(CIPHER_START);
+    this->cipherEnd = strlen(CIPHER_END);
 }
 
 ErrInfo *LogWriter::initMmap(JNIEnv *env, std::string basicInfo, std::string logDir) {
-    //首先，记录基本信息
     this->basicInfo = basicInfo;
     this->logDir = logDir;
-    //然后，为写入做准备,包括:对没有压缩的文件进行压缩操作;以及mmap操作
-    //考虑了一下，还是把压缩操作放在Java层好了，这里就只准备mmap
-
-    buildDate = getDate();
-    //加入后缀,防止普通IO和mmap方式同用一个文件而导致错误
-    filePath = logDir + "/" + buildDate + "-mmap";
-
-    bool fileExists = true;
+    this->buildDate = getDate();
+    // add the suffix '-mmap', to make a distinction from common IO
+    this->filePath = logDir + "/" + buildDate + "-mmap";
 
     this->fd = open(filePath.c_str(), O_RDWR | O_CREAT, (mode_t) 0600);
 
@@ -30,249 +24,266 @@ ErrInfo *LogWriter::initMmap(JNIEnv *env, std::string basicInfo, std::string log
         return new ErrInfo(OPEN_EXIT, "Error opening file");
     }
 
-    if (lock(fd) < 0) {
-        close(fd);
-        return new ErrInfo(LOCK_EXIT, "Error locked file");
-    }
-
-    struct stat fileStat;
+    this->fileStat.st_size = 0;
     if (fstat(fd, &fileStat) == -1) {
-        unlock(fd);
         close(fd);
         return new ErrInfo(FSTAT_EXIT, "Error fstat file");
     }
 
-    fileSize = fileStat.st_size;
-    this->pageSize = sysconf(_SC_PAGE_SIZE);
+    this->fileSize = fileStat.st_size;
+    this->logPageSize = static_cast<off_t >(ALLOC_PAGE_NUM * sysconf(_SC_PAGE_SIZE));
 
-    logPageSize = ALLOC_PAGE_NUM * pageSize;
+    bool fileExists = true;
 
-    //如果fileSize为0，则表示是首次创建文件
-    //如果fileSize不是pageSize的整数倍，则让其补全到pageSize的整数倍
-    if (fileSize < pageSize || fileSize % pageSize != 0) {
+    // If fileSize is not an integer multiple of logPageSize, let it be complemented to an integer multiple of logPageSize
+    if (fileSize < logPageSize || fileSize % logPageSize != 0) {
 
         fileExists = fileSize > 0;
 
-        off_t increaseSize = logPageSize - fileSize % logPageSize;
+        off_t increaseSize = logPageSize - (fileSize % logPageSize);
 
         if (ftruncate(fd, fileSize + increaseSize) == -1) {
-            unlock(fd);
             close(fd);
             return new ErrInfo(LSEEK_EXIT, "Error when calling ftruncate() to stretch the file");
         }
+
         fileSize += increaseSize;
 
-
         if (lseek(fd, fileSize - 1, SEEK_SET) == -1) {
-            unlock(fd);
             close(fd);
             return new ErrInfo(LSEEK_EXIT, "Error calling lseek() to stretch the file");
         }
 
-
-        //TODO 其实可以考虑在这里写入一个特殊的结束符
-        if (write(fd, "", 1) == -1) {
-            unlock(fd);
+        if (write(fd, "", sizeof(char)) == -1) {
             close(fd);
             return new ErrInfo(WRITE_EXIT, "Error writing last byte of the file");
         }
 
     }
 
-    //之后，跳转到最后一个页面的起始位置 ，这里当然就需要利用offset了
-    ////////////////////////////////////////////////////////////////////////////
-    off_t pageOffsetNum = fileSize / logPageSize - 1;
-    if (pageOffsetNum < 0) {
-        pageOffsetNum = 0;
-    }
-    pageOffset = pageOffsetNum * logPageSize;
-
-    //TODO 每次mmap的长度为logPageSize,目前暂时定为一个页面，但是后面这个值肯定需要修改，比如修改为600K
-    map = mmap(0, logPageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, pageOffset);
+    void *map = mmap(NULL, static_cast<size_t>(logPageSize),
+                     PROT_READ | PROT_WRITE,
+                     MAP_SHARED, fd,
+                     fileSize - logPageSize);
     ////////////////////////////////////////////////////////////////////////////////
 
 
-    if (map == MAP_FAILED) {
-        unlock(fd);
+    if (map == MAP_FAILED || map == NULL) {
         close(fd);
         return new ErrInfo(MMAP_EXIT, "Error mmaping the file");
     }
 
-    recordPtr = (char *) map;
-    for (int i = 0; i < logPageSize - 1; i++) {  //TODO 这里是不是要在logPageSize-1和logPageSize中选择一个呢?
-        recordPtr++;
+    recordPtr = static_cast<char *> (map);
+
+    if (recordPtr == NULL) {
+        close(fd);
+        return new ErrInfo(MMAP_EXIT, "Error cast char*");
+    }
+
+    ErrInfo *errInfo = checkMmapFile();
+    if (errInfo != NULL) {
+        unixMunmap(fd, static_cast<void *>(recordPtr), logPageSize);
+        close(fd);
+        return errInfo;
     }
 
     bool findFlag = false;
-    size_t i;
-    for (i = 0; i < logPageSize - 1; i++) {
-        //找到第一个'\n'即停止查找,如果没找到，则说明这个页面还是空白的，正好回到页面开始处
-        if (*recordPtr == '\n') {
-            findFlag = 1;
+
+    for (off_t i = logPageSize - 1; i >= 0; i--) {
+        // Find the first '\n' and stop the search, if not found, then the page is still blank, just back to the beginning of the page
+        if (recordPtr[i] == '\n') {
+            findFlag = true;
+            if (i != logPageSize - 1) {
+                recordIndex = i + 1;
+            } else {
+                recordIndex = logPageSize;
+            }
             break;
         }
-        --recordPtr;
+    }
+    if (!findFlag) {
+        recordIndex = 0;
     }
 
+    memset(recordPtr + recordIndex, 0, static_cast<size_t>(logPageSize - recordIndex));
 
-    if (findFlag) {
-        restSize = i;
-    } else {
-        restSize = i + 1;
-    }
-
-    //如果文件是首次创建，则需要写入基本信息
+    // must write basic info to log file if first create
     if (!fileExists) {
-        return writeLog(env, basicInfo.c_str(), encryptBasic);
+        return writeLog(env, basicInfo.c_str(), false);
     }
 
     return nullptr;
 }
 
 /**
- * 注意:这个是在子线程执行的
  * @param basicInfo
  * @param logDir
  */
-
-//TODO 抛出异常的行为还是放在jni方法中比较好，否则都带上JNIEnv的话不利于跨平台应用
-ErrInfo *LogWriter::init(JNIEnv *env, std::string basicInfo, std::string logDir,
-                         bool encryptBasic, std::string encryptMethod, std::string key) {
-    this->encryptBasic = encryptBasic;
-    initEncrypt(encryptMethod, key);
+ErrInfo *LogWriter::init(JNIEnv *env, std::string basicInfo, std::string logDir, std::string key) {
+    initEncrypt(key);
     return initMmap(env, basicInfo, logDir);
 }
 
 LogWriter::~LogWriter() {
 
     //now write it to disk
-    if (msync(map, logPageSize, MS_SYNC) == -1) {
+    if (msync(recordPtr, static_cast<size_t>(logPageSize), MS_SYNC) == -1) {
         perror("Could not sync the file to disk");
     }
 
     //Don't forget to free mmapped memory.
-    if (munmap(map, logPageSize) == -1) {
-        unlock(fd);
+    if (munmap(recordPtr, static_cast<size_t>(logPageSize)) == -1) {
         close(fd);
         perror("Error un-mmaping the file");
         exit(EXIT_FAILURE);
     }
-    unlock(fd);
     //Un-mapping doesn't close the file, so we still need to do that.
     close(fd);
 
+    buildDate.shrink_to_fit();
+    basicInfo.shrink_to_fit();
+    logDir.shrink_to_fit();
+    filePath.shrink_to_fit();
 }
 
-void LogWriter::initEncrypt(std::string encryptMethod, std::string key) {
-    //密钥不能为空
+void LogWriter::initEncrypt(std::string key) {
     if (key.empty()) {
+        teaCipher = NULL;
         return;
     }
-    if (encryptMethod.empty()) {
-        return;
-    }
-    if (encryptMethod == AES_NAME) {
-        //TODO 后面添加上AES加密
-    } else if (encryptMethod == DES_NAME) {
-        symEncrypt = new DESEncrypt(key);
-    } else {
-        //后面加上TEA加密
-    }
+    teaCipher = new TEACipher(key);
 }
 
 ErrInfo *LogWriter::writeLog(JNIEnv *env, const char *logMsg, bool crypt) {
-    //TODO 如果是写密文的话，就必须自己传递textSize,因为密文中间可能含有\0,这样的话strlen就获取不到真实长度
-    size_t textSize = strlen(logMsg);
 
-    if (!crypt || symEncrypt == NULL) {
+    const size_t textSize = strlen(logMsg);
+
+    if (!crypt || teaCipher == NULL) {
         return writeLog(env, logMsg, textSize);
     } else {
-        //TODO 这里暂时还不明白为何要一个比textSize更大的数组
-        size_t cipherLen;
-        if (textSize % 8 == 0) {
-            cipherLen = textSize;
-        } else {
-            cipherLen = textSize + (8 - textSize % 8);
+        // After obtaining the cipher text, need to add "Cipher_Start" the beginning of the cipher text, and add "Cipher_End" the end of the cipher text
+        ErrInfo *errInfo = writeLog(env, CIPHER_START, cipherStart);
+
+        if (errInfo != NULL) {
+            return errInfo;
         }
-        char cipher[cipherLen];
-        memset(cipher, 0, cipherLen);
 
-        symEncrypt->encrypt(logMsg, cipher);
-        ////////////////////////////////////////////
+        size_t teaSize = textSize + (textSize % 8 == 0 ? 0 : 8 - textSize % 8);
 
-        //获得密文后，需要在前面加上"Cipher_Start"这个密文开始标志,在后面加上"Cipher_End"这个密文结束标志,即进行字符串拼接
+        char *teaCiphers = new char[teaSize];
+        memset(teaCiphers, 0, teaSize);
 
-        writeLog(env, CIPHER_START, strlen(CIPHER_START));
+        teaCipher->encrypt(logMsg, static_cast<int>(teaSize), teaCiphers);
 
-        ErrInfo *info = writeLog(env, cipher, cipherLen);
+        char *baseEncodes = b64_encode(teaCiphers, teaSize);
 
-        writeLog(env, CIPHER_END, strlen(CIPHER_END));
+        errInfo = writeLog(env, baseEncodes, strlen(baseEncodes));
 
-        return info;
+        free(teaCiphers);
+        free(baseEncodes);
+
+        if (errInfo != NULL) {
+            return errInfo;
+        }
+        return writeLog(env, CIPHER_END, cipherEnd);
     }
 }
 
 ErrInfo *LogWriter::writeLog(JNIEnv *env, const char *logMsg, size_t textSize) {
-    size_t len;
-    const char *msgPtr = logMsg;
+    if (logMsg == NULL || textSize <= 0) {
+        return nullptr;
+    }
+
+    if (recordPtr == NULL) {
+        close(fd);
+        return new ErrInfo(WRITE_EXIT, "Error writing log");
+    }
+
+    ErrInfo *errInfo = checkMmapFile();
+    if (errInfo != NULL) {
+        unixMunmap(fd, static_cast<void *>(recordPtr), logPageSize);
+        close(fd);
+        return errInfo;
+    }
+
+    size_t msgIndex = 0;
+
     while (1) {
 
-        len = textSize <= restSize ? textSize : restSize;
-
-        if (len > 0) {
-            memcpy(recordPtr, msgPtr, len);
-
-            recordPtr = recordPtr + len;
-            msgPtr = msgPtr + len;
+        for (; msgIndex < textSize && recordIndex < logPageSize; msgIndex++) {
+            recordPtr[recordIndex] = logMsg[msgIndex];
+            recordIndex++;
         }
 
+        //当开辟的mmap内存被写满时,需要再开辟一页mmap内存
+        if (recordIndex >= logPageSize) {
 
-        //说明在这次写入之前，restSize小于textSize,所以需要再开辟一页
-        if (len < textSize) {
+            ErrInfo *errInfo = unixMunmap(fd, recordPtr, (size_t) logPageSize);
+            if (errInfo != NULL) {
+                close(fd);
+                return errInfo;
+            }
 
-            textSize -= len;
+            recordPtr = NULL;
 
-            unixMunmap(fd, map, logPageSize);
-
-            fileSize += logPageSize;
+            if (access(filePath.c_str(), 0) != 0) {
+                close(fd);
+                return new ErrInfo(ACCESS_EXIT, "Error calling access file");
+            }
 
             //扩展文件大小
-            if (ftruncate(fd, fileSize) == -1) {
-                unlock(fd);
+            if (ftruncate(fd, fileSize + logPageSize) == -1) {
                 close(fd);
                 return new ErrInfo(LSEEK_EXIT, "Error calling ftruncate() to stretch file");
             }
 
             //移动到文件末尾
-            if (lseek(fd, logPageSize - 1, SEEK_CUR) == -1) {
-                unlock(fd);
+            if (lseek(fd, fileSize + logPageSize - 1, SEEK_SET) == -1) {
                 close(fd);
                 return new ErrInfo(LSEEK_EXIT, "Error calling lseek() to stretch the file");
             }
 
             //在文件末尾写入一个字符，达到扩展文件大小的目的
             if (write(fd, "", 1) == -1) {
-                unlock(fd);
                 close(fd);
                 return new ErrInfo(WRITE_EXIT, "Error writing last byte of the file");
             }
 
-            pageOffset += logPageSize;
+            this->fileStat.st_size = 0;
 
-            map = mmap(0, logPageSize, PROT_READ | PROT_WRITE, MAP_SHARED, fd, pageOffset);
+            if (fstat(fd, &fileStat) == -1) {
+                close(fd);
+                return new ErrInfo(FSTAT_EXIT, "Error fstat file");
+            }
 
-            if (map == MAP_FAILED) {
-                unlock(fd);
+            if (fileStat.st_size - logPageSize != this->fileSize &&
+                fileStat.st_size % logPageSize != 0) {
+                close(fd);
+                return new ErrInfo(WRITE_EXIT, "Error stretch file when writing");
+            }
+
+            this->fileSize = fileStat.st_size;
+
+            void *map = mmap(NULL, static_cast<size_t>(logPageSize), PROT_READ | PROT_WRITE,
+                             MAP_SHARED, fd,
+                             fileSize - logPageSize);
+
+            if (map == MAP_FAILED || map == NULL) {
                 close(fd);
                 return new ErrInfo(MMAP_EXIT, "Error mmaping the file");
             }
 
-            recordPtr = (char *) map;
+            recordPtr = static_cast<char *> (map);
 
-            restSize = logPageSize;
+            if (recordPtr == NULL) {
+                close(fd);
+                return new ErrInfo(MMAP_EXIT, "Error cast char*");
+            }
 
+            memset(recordPtr, 0, static_cast<size_t >(logPageSize));
+
+            recordIndex = 0;
         } else {
-            restSize -= len;
             break;
         }
     }
@@ -283,6 +294,7 @@ ErrInfo *LogWriter::writeLog(JNIEnv *env, const char *logMsg, size_t textSize) {
 
 void LogWriter::refreshBasicInfo(JNIEnv *env, std::string basicInfo) {
     //TODO 这个会不会涉及浅copy和深copy的问题
+    this->basicInfo.shrink_to_fit();
     this->basicInfo = basicInfo;
 }
 
@@ -290,11 +302,12 @@ ErrInfo *LogWriter::closeAndRenew(JNIEnv *env) {
 
     //还是改成复制一个文件出来更好,比如将2017-11-05复制出一个2017-11-05-up的文件出来
     //首先取消映射
-    ErrInfo *errInfo = unixMunmap(fd, map, logPageSize);
+    ErrInfo *errInfo = unixMunmap(fd, recordPtr, static_cast<size_t >(logPageSize));
     if (errInfo != NULL) {
+        close(fd);
         return errInfo;
     }
-    unlock(fd);
+    recordPtr = NULL;
     //然后关闭文件
     close(fd);
     //然后重命名文件
@@ -305,8 +318,10 @@ ErrInfo *LogWriter::closeAndRenew(JNIEnv *env) {
     if (access(filePath.c_str(), 0) == 0) {
         rename(filePath.c_str(), upFilePath.c_str());
     }
+    upFilePath.shrink_to_fit();
+    buildDate.shrink_to_fit();
+    filePath.shrink_to_fit();
     //最后重新初始化，即新建文件并映射
-    //return init(env, basicInfo, logDir);
     return initMmap(env, basicInfo, logDir);
 }
 
@@ -314,32 +329,32 @@ std::string LogWriter::getDate() {
     time_t now = time(0);
     tm localTime = *localtime(&now);
     std::string *date;
-    char buf[20];
-    strftime(buf, sizeof(buf), "%Y-%m-%d", &localTime);
+    size_t bufSize = sizeof(char) * 20;
+    char *buf = (char *) malloc(bufSize);
+    strftime(buf, bufSize, "%Y-%m-%d", &localTime);
     date = new std::string(buf);
+    free(buf);
     return *date;
 }
 
 ErrInfo *LogWriter::unixMunmap(int fd, void *map, size_t map_size) {
+    if (msync(map, map_size, MS_SYNC) == -1) {
+        return new ErrInfo(UNMMAP_EXIT, "Error sync the file to disk");
+    }
     if (munmap(map, map_size) == -1) {
-        unlock(fd);
-        close(fd);
         return new ErrInfo(UNMMAP_EXIT, "Error un-mmapping the file");
     }
     return NULL;
 }
 
-//采用文件锁机制，要是文件锁已经被其他进程占用，则直接返回而不阻塞
-int LogWriter::lock(int fd) {
-    this->loglock.l_len = 0;
-    this->loglock.l_start = 0;
-    this->loglock.l_type = F_WRLCK;
-    this->loglock.l_whence = SEEK_SET;
-    return fcntl(fd, F_SETLK, &loglock);
-}
-
-int LogWriter::unlock(int fd) {
-    this->loglock.l_type = F_ULOCK;
-    return fcntl(fd, F_SETLK, &loglock);
+ErrInfo *LogWriter::checkMmapFile() {
+    if (access(filePath.c_str(), 0) != 0) {
+        return new ErrInfo(WRITE_EXIT, "Error access log file");
+    }
+    this->fileStat.st_size = 0;
+    if (fstat(fd, &fileStat) == -1 || this->fileStat.st_size != this->fileSize) {
+        return new ErrInfo(FSTAT_EXIT, "Error read file size");
+    }
+    return NULL;
 }
 

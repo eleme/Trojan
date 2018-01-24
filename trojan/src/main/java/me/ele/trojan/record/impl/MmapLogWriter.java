@@ -6,7 +6,6 @@ import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import me.ele.trojan.config.TrojanConstants;
-import me.ele.trojan.encrypt.EncryptMethod;
 import me.ele.trojan.log.Logger;
 import me.ele.trojan.record.ILogWriter;
 import me.ele.trojan.utils.DateUtils;
@@ -26,8 +25,7 @@ public class MmapLogWriter implements ILogWriter {
         }
     }
 
-    private native long nativeInit(String basicInfo, String dir,
-                                   boolean encryptBasic, String encryptMethod, String key);
+    private native long nativeInit(String basicInfo, String dir, String key);
 
     private native long nativeWrite(long logWriterObject, String msgContent, boolean encryptFlag);
 
@@ -46,14 +44,11 @@ public class MmapLogWriter implements ILogWriter {
     private File logFile;
 
     @Override
-    public void init(Context context, final String basicInfoContent, final String dir,
-                     boolean encryptBasic, EncryptMethod encryptMethod,
-                     String key) throws Throwable {
+    public void init(Context context, final String basicInfoContent, final String dir, String key) throws Throwable {
         Logger.i("MmapWriter", "MMapLogWriter-->init");
         logFileDir = dir;
         buildDate = DateUtils.getDate();
-        final String encryptMethodName = null == encryptMethod ? "" : encryptMethod.getMethodName();
-        nativeLogWriter = nativeInit(basicInfoContent, dir, encryptBasic, encryptMethodName, key);
+        nativeLogWriter = nativeInit(basicInfoContent, dir, key);
         initFlag.set(true);
         logFile = new File(logFileDir + File.separator + buildDate + TrojanConstants.MMAP);
     }

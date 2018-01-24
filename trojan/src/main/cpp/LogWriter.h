@@ -18,17 +18,14 @@
 #include <fstream>
 #include "JNIHelp.h"
 #include "ErrInfo.h"
-#include "SymEncrypt.h"
-#include "des/DESEncrypt.h"
+#include "tea/TEACipher.h"
+#include "tea/base64.h"
+
 //一次性分配的页数,目前测试取值为1,2,3,4时seekOffset使用logPageSize-1可以
 #define ALLOC_PAGE_NUM 40
 //含有\n的目的是为了将Cipher_Start与密文写在不同的行，这样读取时比较方便
-#define CIPHER_START "Cipher_Start\n"
-#define CIPHER_END "\nCipher_End\n"
-
-#define AES_NAME "AES"
-#define DES_NAME "DES"
-#define TEA_NAME "TEA"
+#define CIPHER_START "<Cipher>"
+#define CIPHER_END "<Cipher>\n"
 
 class LogWriter {
 public:
@@ -36,8 +33,7 @@ public:
 
     ~LogWriter();
 
-    ErrInfo *init(JNIEnv *, std::string basicInfo, std::string logDir,
-                  bool encryptBasic, std::string encryptMethod, std::string key);
+    ErrInfo *init(JNIEnv *, std::string basicInfo, std::string logDir, std::string key);
 
     ErrInfo *writeLog(JNIEnv *, const char *logMsg, bool crypt);
 
@@ -46,32 +42,32 @@ public:
     ErrInfo *closeAndRenew(JNIEnv *env);
 
 private:
+    struct stat fileStat;
+
     int fd;
-
-    //使用文件锁
-    struct flock loglock;
-
-    size_t restSize;
 
     off_t fileSize;
 
-    off_t pageOffset;
-    off_t pageSize;
-    size_t logPageSize;
+    off_t logPageSize;
 
     std::string buildDate;
     std::string filePath;
 
-    void *map;
-    char *recordPtr;
     std::string basicInfo;
     std::string logDir;
+
+    char *recordPtr = NULL;
+
+    off_t recordIndex = 0;
+
 
     ///////////////后面还是有必要把加密相关的都放到一个类中保存,
     /// 并且设计一个抽象类，以及AES,DES,TEA这三种算法的实现类/////////////
     //对称加密对象
-    SymEncrypt *symEncrypt;
-    bool encryptBasic;
+    TEACipher *teaCipher;
+
+    size_t cipherStart;
+    size_t cipherEnd;
     ////////////////////////////////////////////////////
 
     //工具方法，获得当前日期，格式类似2017-11-06
@@ -79,15 +75,14 @@ private:
 
     ErrInfo *initMmap(JNIEnv *, std::string basicInfo, std::string logDir);
 
-    void initEncrypt(std::string encryptMethod, std::string key);
+    void initEncrypt(std::string key);
 
     ErrInfo *writeLog(JNIEnv *, const char *logMsg, size_t textSize);
 
     ErrInfo *unixMunmap(int fd, void *map, size_t map_size);
 
-    int lock(int fd);
+    ErrInfo *checkMmapFile();
 
-    int unlock(int fd);
 };
 
 #endif //TROJAN_WRITER_H
