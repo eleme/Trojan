@@ -51,7 +51,7 @@ apply plugin: 'me.ele.lancet'
 dependencies {
     ......
     provided 'me.ele:lancet-base:1.0.2'
-    compile 'me.ele:trojan-library:0.0.3'
+    compile 'me.ele:trojan-library:0.0.4'
 }
 ```
 
@@ -63,15 +63,17 @@ Add in the custom Application:
 
 ```java
 TrojanConfig config = new TrojanConfig.Builder(this)
-                // Set user information
-                .userInfo("xxxx")
-                // Set the current device information
-                .deviceInfo("xxxx")
-                // Optional, the current default file / sdcard / package name _trojanLog /
-                .logDir("xxxx")
-                // Console log switch, the default is open
-                .enableLog(true)
-                .build();
+    // Set user information
+    .userInfo("xxxx")
+    // Set device id
+    .deviceId("xxxx")
+    // Set cipher key if need encry log
+    .cipherKey("xxxx")
+    // Optional, save log file in sdcard by default
+    .logDir("xxxx")
+    // Console log switch, the default is open
+    .enableLog(true)
+    .build();
 Trojan.init(config);
 ```
 
@@ -79,11 +81,11 @@ Special Note:
 
 1. The log files are stored in sdcard by default and will not be lost even if the application is uninstalled;
 2. To be compatible with multiple processes, log files stored in their respective directories;
-3. The log is not encrypted by default, we currently only provide DES encryption, but we still explore more efficient and concise implementation.
+3. The log is not encrypted by default, we currently only provide TEA encryption in view for high efficiency, but we still explore decryption tool。
 
 ### 2. Record the log
 
-Trojan provides two ways to log:
+Trojan provides two ways to recode log:
 
 Firstly:
 
@@ -99,6 +101,12 @@ msgList.add("Hello Trojan!");
 msgList.add("We have a nice day!");
 msgList.add("Hello world!");
 Trojan.log("Trojan", msgList);
+```
+
+By default, a single line log is not encrypted, and if you need to encrypt it, the following is used:
+
+```java
+Trojan.log("Trojan", "We have a nice day!", true);
 ```
 
 ### 3. User Information
@@ -125,6 +133,6 @@ Through the above steps, you can integrate [Trojan](https://github.com/ELELogist
 
 ## License
 
-![](https://www.gnu.org/graphics/gplv3-127x51.png)
+![](/assets/trojan_license.png)
 
-Trojan is available under the GPLv3 license. See the LICENSE file for more info.
+Trojan is available under the Apache-2.0 license. See the [LICENSE](/LICENSE) file for more info.
