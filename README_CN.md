@@ -15,7 +15,7 @@
     </a>
 </p>
 
-[Trojan](https://github.com/ELELogistics/Trojan) 是一个稳定高效的移动端轻量级日志 SDK，既可以记录通用日志，比如网络请求、电量变化、页面生命周期，也可以记录自定义的日志，从而可以通过用户日志来帮助我们定位分析问题。具有以下特点：
+[Trojan](https://github.com/ELELogistics/Trojan)是一个稳定高效的移动端轻量级日志SDK，既可以记录通用日志，比如网络请求、电量变化、页面生命周期，也可以记录自定义的日志，从而可以通过用户日志来帮助我们定位分析问题。具有以下特点：
 
 * 简洁的 API，通过几行代码就可以接入，实现日记记录功能；
 * 使用 AOP 技术 [Lancet](https://github.com/eleme/lancet) 框架插桩收集通用日志，并且支持增量编译；
@@ -51,7 +51,7 @@ apply plugin: 'me.ele.lancet'
 dependencies {
     ......
     provided 'me.ele:lancet-base:1.0.2'
-    compile 'me.ele:trojan-library:0.0.3'
+    compile 'me.ele:trojan-library:0.0.4'
 }
 ```
 
@@ -63,15 +63,17 @@ dependencies {
 
 ```java
 TrojanConfig config = new TrojanConfig.Builder(this)
-                // 设置用户信息
-                .userInfo("xxxx")
-                // 设置当前的设备信息
-                .deviceInfo("xxxx")
-                // 可选，文件目前默认为/sdcard/包名_trojanLog/
-                .logDir("xxxx")
-                // 控制台日志开关，默认是打开
-                .enableLog(true)
-                .build();
+    // Set user information
+    .userInfo("xxxx")
+    // Set device id
+    .deviceId("xxxx")
+    // Set cipher key if need encry log
+    .cipherKey("xxxx")
+    // Optional, save log file in sdcard by default
+    .logDir("xxxx")
+    // Console log switch, the default is open
+    .enableLog(true)
+    .build();
 Trojan.init(config);
 ```
 
@@ -79,7 +81,7 @@ Trojan.init(config);
 
 1. 日志文件默认保存在 sdcard 中，即使应用被卸载，也不会丢失日志；
 2. 为兼容多进程，避免文件相互干扰，日志文件保存在各自的目录下，目录以进程名来命名；
-3. 默认情况下日志不加密，目前仅提供 DES 加密方式，但仍在探索更为高效简洁的实现方式，敬请期待。
+3. 默认情况下日志不加密，考虑到加密的高效性，目前仅提供TEA加密方式，解密工具仍在探索中，敬请期待。
 
 ### 2. 记录日志
 
@@ -99,6 +101,12 @@ msgList.add("Hello Trojan!");
 msgList.add("We have a nice day!");
 msgList.add("Hello world!");
 Trojan.log("Trojan", msgList);
+```
+
+默认情况下，对于单行日志不加密，如果需要加密，则使用如下：
+
+```java
+Trojan.log("Trojan", "We have a nice day!", true);
 ```
 
 ### 3. 用户信息
@@ -125,6 +133,6 @@ Trojan.refreshUser(null);
 
 ## 协议
 
-![](https://www.gnu.org/graphics/gplv3-127x51.png)
+![](/assets/trojan_license.png)
 
-Trojan 基于 GPLv3 协议进行分发和使用，更多信息参见协议文件。
+Trojan基于Apache-2.0协议进行分发和使用，更多信息参见[协议](/LICENSE)文件。

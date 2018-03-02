@@ -87,5 +87,5 @@ publish {
     userOrg = 'michaelzhong'
     groupId = 'me.ele'
     artifactId = 'trojan-library'
-    publishVersion = '$trojan_version'
+    publishVersion = "$trojan_version"
 }
