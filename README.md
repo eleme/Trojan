@@ -7,9 +7,6 @@
     <a href="https://www.java.com">
         <img src="https://img.shields.io/badge/language-Java-blue.svg">
     </a>
-    <a href="https://github.com/ELELogistics/Trojan/blob/master/LICENSE">
-        <img src="https://img.shields.io/badge/license-GPLv3-000000.svg">
-    </a>
     <a href="https://raw.githubusercontent.com/EyreFree/EFQRCode/assets/icon/MadeWith%3C3.png">
         <img src="https://img.shields.io/badge/made%20with-%3C3-orange.svg">
     </a>
