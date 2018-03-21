@@ -78,7 +78,7 @@ Trojan.init(config);
 
 1. 日志文件默认保存在 sdcard 中，即使应用被卸载，也不会丢失日志；
 2. 为兼容多进程，避免文件相互干扰，日志文件保存在各自的目录下，目录以进程名来命名；
-3. 默认情况下日志不加密，考虑到加密的高效性，目前仅提供TEA加密方式，解密工具仍在探索中，敬请期待。
+3. 默认情况下日志不加密，考虑到加密的高效性，目前仅提供TEA加密方式。
 
 ### 2. 记录日志
 
@@ -123,6 +123,23 @@ Trojan.refreshUser(null);
 ### 4. 上传方案
 
 针对日志上传，在 [Demo](https://github.com/ELELogistics/Trojan/blob/master/app/src/main/java/me/ele/trojan/demo/upload/DemoLeanCloudUploader.java) 中提供了 [LeanCloud](https://leancloud.cn/) 这种免费简单的方式，可以实现上传、浏览、下载等文件服务的基本功能，可供参考。
+
+### 5. 数据解密
+
+当设置了加密秘钥，为保证敏感数据的安全性，可以加密单行日志，在日志分析时就需要对加密数据进行解密。[解密脚本](/decrypt/trojan_decrypt.py)使用如下：
+
+1. 在MAC上编译生成解密SO库，在仓库中已经生成了so库，这一步可以省略：
+    
+    ```java
+    gcc -shared -Wl,-install_name,trojan_decrypt.so -o trojan_decrypt.so -fPIC trojan_decrypt.c
+    
+    ```
+2. 在MAC上调用python脚本解密数据，需要传入解密秘钥和待解密的文件路径，需要注意的是python脚本的路径要对：
+
+    ```java
+    python ./trojan_decrypt.py cipher-key cipher-file-path
+    
+    ```
 
 ## 备注
 

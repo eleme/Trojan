@@ -110,7 +110,7 @@ doJniThrowException(C_JNIEnv *env, const char *className, const char *msg) {
     JNIEnv *e = reinterpret_cast<JNIEnv *>(env);
 
     if ((*env)->ExceptionCheck(e)) {
-        /* TODO: consider creating the new exception with this as "cause" */
+        /* consider creating the new exception with this as "cause" */
         scoped_local_ref<jthrowable> exception(env, (*env)->ExceptionOccurred(e));
         (*env)->ExceptionClear(e);
 

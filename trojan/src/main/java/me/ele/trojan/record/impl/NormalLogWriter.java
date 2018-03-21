@@ -19,7 +19,9 @@ import me.ele.trojan.utils.IOUtil;
  * Created by allen on 2017/11/7.
  */
 
-//TODO 这个类的加密还没实现
+/**
+ * 这个类的加密还没实现
+ */
 public class NormalLogWriter implements ILogWriter {
 
     private Context context;
