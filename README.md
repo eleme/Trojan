@@ -48,7 +48,7 @@ apply plugin: 'me.ele.lancet'
 dependencies {
     ......
     provided 'me.ele:lancet-base:1.0.2'
-    compile 'me.ele:trojan-library:0.0.4'
+    compile 'me.ele:trojan-library:0.0.5'
 }
 ```
 
