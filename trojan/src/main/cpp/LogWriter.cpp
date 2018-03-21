@@ -168,7 +168,7 @@ ErrInfo *LogWriter::writeLog(JNIEnv *env, const char *logMsg, bool crypt) {
             return errInfo;
         }
 
-        size_t teaSize = textSize + (textSize % 8 == 0 ? 0 : 8 - textSize % 8);
+        size_t teaSize = textSize;
 
         char *teaCiphers = new char[teaSize];
         memset(teaCiphers, 0, teaSize);
@@ -293,7 +293,6 @@ ErrInfo *LogWriter::writeLog(JNIEnv *env, const char *logMsg, size_t textSize) {
 
 
 void LogWriter::refreshBasicInfo(JNIEnv *env, std::string basicInfo) {
-    //TODO 这个会不会涉及浅copy和深copy的问题
     this->basicInfo.shrink_to_fit();
     this->basicInfo = basicInfo;
 }

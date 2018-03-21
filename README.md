@@ -78,7 +78,7 @@ Special Note:
 
 1. The log files are stored in sdcard by default and will not be lost even if the application is uninstalled;
 2. To be compatible with multiple processes, log files stored in their respective directories;
-3. The log is not encrypted by default, we currently only provide TEA encryption in view for high efficiency, but we still explore decryption tool。
+3. The log is not encrypted by default, we currently only provide TEA encryption in view for high efficiency。
 
 ### 2. Record the log
 
@@ -124,6 +124,23 @@ Trojan.refreshUser(null);
 
 In [Demo](https://github.com/ELELogistics/Trojan/blob/master/app/src/main/java/me/ele/trojan/demo/upload/DemoLeanCloudUploader.java) we provided free and simple way such as [LeanCloud](https://leancloud.cn/) to upload log file, you can browse, download and download log file.
 
+### 5. Data Decryption
+
+When we set the encryption key, we can encrypt a single log to ensure the security of sensitive data. We must decrypt the encrypted data When we analyze the log. Use the [decryption script](/decrypt/trojan_decrypt.py) as follows:
+
+1. Compile and generate decryption SO library on MAC, The so library has been generated in the repository. This step can be omitted:
+    
+    ```java
+    gcc -shared -Wl,-install_name,trojan_decrypt.so -o trojan_decrypt.so -fPIC trojan_decrypt.c
+    
+    ```
+2. Call python script to decrypt the data on MAC, you need to pass in the decryption key and file path to be decrypted, it should be noted that the path of the python script:
+
+    ```java
+    python ./trojan_decrypt.py cipher-key cipher-file-path
+    
+    ```
+    
 ## PS
 
 Through the above steps, you can integrate [Trojan](https://github.com/ELELogistics/Trojan) SDK to record user's log, That is very simple! If you have any questions about the use of Lancet, you can get more details by [Readme](https://github.com/eleme/lancet/blob/dev/README_zh.md).

@@ -48,7 +48,6 @@ dependencies {
     compile project(':trojan')
     //compile 'me.ele:trojan-library:0.0.2'
 
-    //TODO 注意:这是为了debug C++代码方便而加的配置，发布时要改过来
     //debugCompile project(path: ':trojan', configuration: 'debug')
     //releaseCompile project(path: ':trojan', configuration: 'release')
 

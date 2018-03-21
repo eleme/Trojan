@@ -71,9 +71,9 @@ public class LancetHook {
         Origin.callVoid();
     }
 
-    //TODO 如果要知道这个View是属于哪个Activity或者Fragment中，要怎么做呢?
-    //TODO 有一个思路就是重写Fragment的onCreateView方法，并且对该View进行setTag,将Fragment的对象名放入其中
-    //TODO 到后面再向上检索(即一路getParent()),一直到某个View中getTag()不为空则取出
+    //如果要知道这个View是属于哪个Activity或者Fragment中，要怎么做呢?
+    //有一个思路就是重写Fragment的onCreateView方法，并且对该View进行setTag,将Fragment的对象名放入其中
+    //到后面再向上检索(即一路getParent()),一直到某个View中getTag()不为空则取出
     @Insert("onClick")
     @ImplementedInterface(value = "android.view.View$OnClickListener", scope = Scope.LEAF)
     public void onClick(View v) throws Throwable {
@@ -112,7 +112,7 @@ public class LancetHook {
             msgList.add("~");
         }
         //如果是ListView或RecycleView中的某个item,则需要打印出它是第几个ItemView,现详细一点的话甚至需要打印出ItemView中TextView中的信息
-        //TODO 争光报了bug,先注释这个功能
+        //争光报了bug,先注释这个功能
         //setIndexIfNeed(v, msgList);
 
         Trojan.log(LogConstants.VIEW_CLICK_TAG, msgList);
