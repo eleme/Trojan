@@ -9,14 +9,15 @@ import me.ele.trojan.listener.PrepareUploadListener;
  */
 
 public interface ILogRecorder {
-    //由于是用户信息，这个就默认要加密
+
     void refreshUser(String user);
 
     void prepareUpload(PrepareUploadListener listener);
 
-    void log(String tag, String msg, boolean cryptFlag);
+    void log(String tag, int version, String msg, boolean cryptFlag);
 
-    void log(String tag, List<String> msgFieldList, boolean cryptFlag);
+    void log(String tag, int version, List<String> msgFieldList, boolean cryptFlag);
 
-    void logToJson(String tag, Object o, boolean encryptFlag);
+    void logToJson(String tag, int version, Object o, boolean encryptFlag);
+
 }

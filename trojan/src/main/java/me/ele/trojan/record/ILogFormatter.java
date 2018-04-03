@@ -8,8 +8,8 @@ import java.util.List;
 
 public interface ILogFormatter {
 
-    String format(String tag, String msg, boolean crypt);
+    String format(String tag, int version, String msg, boolean crypt);
 
-    String format(String tag, List<String> msgFieldList, boolean crypt);
+    String format(String tag, int version, List<String> msgFieldList, boolean crypt);
 
 }

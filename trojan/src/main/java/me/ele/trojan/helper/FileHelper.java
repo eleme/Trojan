@@ -122,8 +122,7 @@ public final class FileHelper {
     }
 
     /**
-     * 这里没有考虑文件权限的问题!
-     * 这里需要先重命名(比如统一重全名为2017-11-05-up这样的名字)，然后再压缩
+     * It needs to be renamed first (for example, the name of the unified name is 2017-11-05-up) and then compressed.
      *
      * @param sourceFile
      * @return
@@ -149,7 +148,7 @@ public final class FileHelper {
             }
             File gzipFile = createGZIPFile(sourceFile, parentPath);
             fis = new FileInputStream(sourceFile);
-            fos = new FileOutputStream(gzipFile);
+            fos = new FileOutputStream(gzipFile, true);
             gos = new GZIPOutputStream(fos);
             byte buffer[] = new byte[1024];
             int count;
@@ -184,10 +183,9 @@ public final class FileHelper {
         gzPathBuilder.append(getGZIPFileName(sourceFile));
 
         File file = new File(gzPathBuilder.toString());
-        if (file.exists()) {
-            file.delete();
+        if (!file.exists()) {
+            file.createNewFile();
         }
-        file.createNewFile();
         return file;
     }
 
@@ -226,6 +224,10 @@ public final class FileHelper {
                     return FileHelper.save2GZIPFile(logFile, renameParentPath);
                 } catch (IOException e) {
                     e.printStackTrace();
+                } finally {
+                    if (!hasContainToday) {
+                        logFile.delete();
+                    }
                 }
             }
         }
