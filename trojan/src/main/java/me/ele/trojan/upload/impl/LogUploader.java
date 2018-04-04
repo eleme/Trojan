@@ -5,11 +5,10 @@ import android.os.Handler;
 import android.os.Looper;
 
 import java.io.File;
-import java.util.LinkedList;
 import java.util.List;
 
 import me.ele.trojan.config.TrojanConfig;
-import me.ele.trojan.executor.ExecutorDispatcher;
+import me.ele.trojan.executor.TrojanExecutor;
 import me.ele.trojan.helper.FileHelper;
 import me.ele.trojan.helper.PermissionHelper;
 import me.ele.trojan.listener.PrepareUploadListener;
@@ -41,7 +40,7 @@ public class LogUploader implements ILogUploader {
         this.logRecorder = logRecorder;
 
         // should check upload file when init
-        ExecutorDispatcher.getInstance().executePrepareUpload(new Runnable() {
+        TrojanExecutor.getInstance().executeUpload(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
@@ -69,7 +68,7 @@ public class LogUploader implements ILogUploader {
             @Override
             public void readyToUpload() {
                 Logger.i("LogUploader-->readyToUpload");
-                ExecutorDispatcher.getInstance().executePrepareUpload(new Runnable() {
+                TrojanExecutor.getInstance().executeUpload(new Runnable() {
                     @Override
                     public void run() {
                         final List<File> gzFileList = FileHelper.cleanUpLogFile(context, trojanConfig.getLogDir());

@@ -10,7 +10,7 @@ import java.util.List;
 import me.ele.trojan.config.LogConstants;
 import me.ele.trojan.config.TrojanConfig;
 import me.ele.trojan.config.TrojanConstants;
-import me.ele.trojan.executor.ExecutorDispatcher;
+import me.ele.trojan.executor.TrojanExecutor;
 import me.ele.trojan.helper.FileHelper;
 import me.ele.trojan.helper.PermissionHelper;
 import me.ele.trojan.listener.PrepareUploadListener;
@@ -50,7 +50,7 @@ public class LogRecorder implements ILogRecorder {
         this.context = config.getContext();
         this.cipherKey = config.getCipherKey();
 
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
@@ -89,7 +89,7 @@ public class LogRecorder implements ILogRecorder {
     @Override
     public void refreshUser(String user) {
         config.setUserInfo(user);
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
@@ -119,7 +119,7 @@ public class LogRecorder implements ILogRecorder {
         if (TextUtils.isEmpty(tag) || TextUtils.isEmpty(msg)) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
@@ -136,7 +136,7 @@ public class LogRecorder implements ILogRecorder {
         if (TextUtils.isEmpty(tag) || msgFieldList == null || msgFieldList.size() == 0) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 //然后要判断是否logWriter是否已经初始化(因为可能在这之前都没权限),如果还没初始化的话，需要先初始化
@@ -154,7 +154,7 @@ public class LogRecorder implements ILogRecorder {
         if (TextUtils.isEmpty(tag) || obj == null) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
@@ -171,7 +171,7 @@ public class LogRecorder implements ILogRecorder {
         if (listener == null) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
