@@ -53,18 +53,18 @@ public class LogUploader implements ILogUploader {
     }
 
     @Override
-    public void prepareUploadLogFile(final WaitUploadListener waitUploadListener) {
+    public void prepareUploadLogFileAsync(final WaitUploadListener waitUploadListener) {
         if (logRecorder == null || waitUploadListener == null) {
-            Logger.e("LogUploader-->prepareUploadLogFile,waitUploadListener null");
+            Logger.e("LogUploader-->prepareUploadLogFileAsync,waitUploadListener null");
             return;
         }
         if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
-            Logger.e("LogUploader-->prepareUploadLogFile,no permission");
+            Logger.e("LogUploader-->prepareUploadLogFileAsync,no permission");
             waitUploadListener.onReadyFail();
             return;
         }
         // execute upload task after notify the LogRecorder module to close log file
-        logRecorder.prepareUpload(new PrepareUploadListener() {
+        logRecorder.prepareUploadAsync(new PrepareUploadListener() {
             @Override
             public void readyToUpload() {
                 Logger.i("LogUploader-->readyToUpload");
@@ -84,6 +84,18 @@ public class LogUploader implements ILogUploader {
                 waitUploadListener.onReadyFail();
             }
         });
+    }
+
+    @Override
+    public File prepareUploadLogFileSync(String dateTime) {
+        if (logRecorder == null) {
+            return null;
+        }
+        if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
+            Logger.e("LogUploader-->prepareUploadLogFileSync,no permission");
+            return null;
+        }
+        return logRecorder.prepareUploadSync(dateTime);
     }
 
     private void notifyPrepareListener(final WaitUploadListener waitUploadListener, final boolean isSuccess, final List<File> gzFileList) {

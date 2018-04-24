@@ -6,6 +6,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.text.TextUtils;
 
+import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.config.TrojanConfig;
@@ -125,10 +126,17 @@ public class TrojanManager {
         }
     }
 
-    public void prepareUploadLogFile(final WaitUploadListener listener) {
+    public void prepareUploadLogFileAsync(final WaitUploadListener listener) {
         if (logUploader != null && listener != null) {
-            logUploader.prepareUploadLogFile(listener);
+            logUploader.prepareUploadLogFileAsync(listener);
         }
+    }
+
+    public File prepareUploadLogFileSync(final String dateTime) {
+        if (logUploader != null && !TextUtils.isEmpty(dateTime)) {
+            return logUploader.prepareUploadLogFileSync(dateTime);
+        }
+        return null;
     }
 
     public void destroy() {

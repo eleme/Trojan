@@ -15,6 +15,7 @@ import me.ele.trojan.Trojan;
 import me.ele.trojan.demo.upload.DemoLeanCloudUploader;
 import me.ele.trojan.listener.WaitUploadListener;
 import me.ele.trojan.log.Logger;
+import me.ele.trojan.utils.DateUtils;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
@@ -45,6 +46,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         findViewById(R.id.btn_write_encrypt_log).setOnClickListener(this);
         findViewById(R.id.btn_change_user).setOnClickListener(this);
         findViewById(R.id.btn_upload_log_file).setOnClickListener(this);
+        findViewById(R.id.btn_get_log_by_date).setOnClickListener(this);
     }
 
     private void requestWritePermissions() {
@@ -55,7 +57,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         } else {
             Logger.e(TAG, "permission granted");
         }
-
     }
 
     @Override
@@ -88,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             }
             Trojan.refreshUser(trojanUser);
         } else if (viewId == R.id.btn_upload_log_file) {
-            Trojan.prepareUploadLogFile(new WaitUploadListener() {
+            Trojan.prepareUploadLogFileAsync(new WaitUploadListener() {
                 @Override
                 public void onReadyToUpload(final String user, final String device, final List<File> waitUploadFileList) {
                     Logger.e("MainActivity->onReadyToUpload:" + waitUploadFileList);
@@ -116,6 +117,16 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     Logger.e("MainActivity->onReadyFail");
                 }
             });
+        } else if (viewId == R.id.btn_get_log_by_date) {
+            new Thread() {
+                @Override
+                public void run() {
+                    Logger.e("MainActivity->2018-04-01:" + Trojan.prepareUploadLogFileSync("2018-04-01"));
+                    Logger.e("MainActivity->2018-05-01:" + Trojan.prepareUploadLogFileSync("2018-05-01"));
+                    Logger.e("MainActivity->2018-04-08:" + Trojan.prepareUploadLogFileSync("2018-04-08"));
+                    Logger.e("MainActivity->2018-04-10:" + Trojan.prepareUploadLogFileSync(DateUtils.getDate()));
+                }
+            }.start();
         }
     }
 }

@@ -1,5 +1,6 @@
 package me.ele.trojan.record;
 
+import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.listener.PrepareUploadListener;
@@ -12,7 +13,9 @@ public interface ILogRecorder {
 
     void refreshUser(String user);
 
-    void prepareUpload(PrepareUploadListener listener);
+    void prepareUploadAsync(PrepareUploadListener listener);
+
+    File prepareUploadSync(String dateTime);
 
     void log(String tag, int version, String msg, boolean cryptFlag);
 

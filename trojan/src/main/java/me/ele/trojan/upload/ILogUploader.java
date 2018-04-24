@@ -1,5 +1,7 @@
 package me.ele.trojan.upload;
 
+import java.io.File;
+
 import me.ele.trojan.listener.WaitUploadListener;
 
 /**
@@ -8,6 +10,8 @@ import me.ele.trojan.listener.WaitUploadListener;
 
 public interface ILogUploader {
 
-    void prepareUploadLogFile(final WaitUploadListener waitUploadListener);
+    void prepareUploadLogFileAsync(final WaitUploadListener waitUploadListener);
+
+    File prepareUploadLogFileSync(final String dateTime);
 
 }

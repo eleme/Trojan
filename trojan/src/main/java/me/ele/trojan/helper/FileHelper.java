@@ -12,10 +12,14 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
 import me.ele.trojan.config.TrojanConstants;
@@ -78,7 +82,7 @@ public final class FileHelper {
         if (context == null) {
             return null;
         }
-        File cacheFile;
+        File cacheFile = null;
         try {
             cacheFile = context.getCacheDir();
         } catch (Exception ex) {
@@ -93,6 +97,21 @@ public final class FileHelper {
             }
         }
         return cacheFile;
+    }
+
+    public static boolean isFileExist(File file) {
+        return file != null && file.exists() && file.isFile();
+    }
+
+    public static boolean isFileFormat(File file) {
+        final String pattern = "^(\\d{4})-(\\d{2})-(\\d{2})";
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(file.getName());
+        return m.find();
+    }
+
+    public static boolean isFileOverdue(File file) {
+        return System.currentTimeMillis() - file.lastModified() > TrojanConstants.FIVE_DAY_MILLS;
     }
 
     /**
@@ -182,30 +201,33 @@ public final class FileHelper {
         gzPathBuilder.append(File.separator);
         gzPathBuilder.append(getGZIPFileName(sourceFile));
 
-        File file = new File(gzPathBuilder.toString());
-        if (!file.exists()) {
-            file.createNewFile();
+        File gzFile = new File(gzPathBuilder.toString());
+        if (!gzFile.exists()) {
+            gzFile.createNewFile();
         }
-        return file;
+        return gzFile;
     }
 
     private static String getGZIPFileName(File sourceFile) {
+        final String pattern = "^(\\d{4})-(\\d{2})-(\\d{2})";
+        Pattern r = Pattern.compile(pattern);
+        Matcher m = r.matcher(sourceFile.getName());
+        if (m.find()) {
+            return m.group(0) + TrojanConstants.GZ;
+        }
         return sourceFile.getName() + TrojanConstants.GZ;
     }
 
-    public static File preHandleLogFile(File logFile, String renameParentPath, boolean needGZ) {
-        if (logFile == null || !logFile.isFile()) {
-            return logFile;
+    public static File handleLogFile(File logFile, String renameParentPath, boolean needGZ) {
+        if (!isFileExist(logFile)) {
+            return null;
         }
-        if (System.currentTimeMillis() - logFile.lastModified() > TrojanConstants.FIVE_DAY_MILLS) {
+        if (!isFileFormat(logFile) || isFileOverdue(logFile)) {
             logFile.delete();
             return null;
         }
-        String fileName = logFile.getName();
-        if (TextUtils.isEmpty(fileName)) {
-            logFile.delete();
-            return null;
-        }
+
+        final String fileName = logFile.getName();
 
         if (fileName.endsWith(TrojanConstants.GZ)) {
             return logFile;
@@ -213,22 +235,12 @@ public final class FileHelper {
 
         boolean hasContainUp = fileName.endsWith(TrojanConstants.UP);
         boolean hasContainToday = fileName.startsWith(DateUtils.getDate());
-        if (hasContainUp || !hasContainToday) {
-
-            if (!hasContainUp) {
-                logFile = renameToUp(logFile);
-            }
-
-            if (needGZ) {
-                try {
-                    return FileHelper.save2GZIPFile(logFile, renameParentPath);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                } finally {
-                    if (!hasContainToday) {
-                        logFile.delete();
-                    }
-                }
+        if (needGZ && (hasContainUp || !hasContainToday)) {
+            try {
+                File gzFile = FileHelper.save2GZIPFile(logFile, renameParentPath);
+                return gzFile;
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }
         return null;
@@ -249,40 +261,27 @@ public final class FileHelper {
 
         File tempDir = getTempDir(context);
         if (tempDir != null) {
-            File[] files = tempDir.listFiles();
-            if (files != null && files.length > 0) {
-                for (File logFile : files) {
-                    if (logFile == null || !logFile.isFile()) {
-                        continue;
-                    }
-                    allLogFiles.add(logFile);
-                }
-            }
+            allLogFiles.addAll(filterLogFile(tempDir.listFiles(), null));
         }
 
         if (!TextUtils.isEmpty(logDirPath)) {
-            File sdDir = new File(logDirPath);
-            File[] files = sdDir.listFiles();
-            if (files != null && files.length > 0) {
-                for (File logFile : files) {
-                    if (logFile == null || !logFile.isFile()) {
-                        continue;
-                    }
-                    allLogFiles.add(logFile);
-                }
-            }
+            allLogFiles.addAll(filterLogFile(new File(logDirPath).listFiles(), null));
         }
 
         if (allLogFiles.size() == 0) {
             return null;
         }
 
+        Collections.sort(allLogFiles, new Comparator<File>() {
+            @Override
+            public int compare(File lhs, File rhs) {
+                return (int) (rhs.lastModified() - lhs.lastModified());
+            }
+        });
+
         Set<String> logPathSet = new HashSet<>();
         for (File logFile : allLogFiles) {
-            if (logFile == null || !logFile.isFile()) {
-                continue;
-            }
-            File gzFile = preHandleLogFile(logFile, logDirPath, true);
+            File gzFile = handleLogFile(logFile, logDirPath, true);
             if (gzFile != null) {
                 logPathSet.add(gzFile.getAbsolutePath());
             }
@@ -290,13 +289,85 @@ public final class FileHelper {
 
         final List<File> gzFileList = new LinkedList<>();
         for (String logPath : logPathSet) {
-            File gzFile = new File(logPath);
-            if (gzFile.isFile()) {
-                gzFileList.add(gzFile);
-            }
+            gzFileList.add(new File(logPath));
         }
 
         return gzFileList;
+    }
+
+    private static List<File> filterLogFile(File[] files, String dateTime) {
+        final List<File> logFileList = new LinkedList<>();
+        if (files == null || files.length == 0) {
+            return logFileList;
+        }
+
+        final boolean isToday = !TextUtils.isEmpty(dateTime) && dateTime.equals(DateUtils.getDate());
+
+        for (File file : files) {
+            if (!isFileExist(file)) {
+                continue;
+            }
+            if (!isFileFormat(file)) {
+                continue;
+            }
+            if (TextUtils.isEmpty(dateTime)) {
+                logFileList.add(file);
+                continue;
+            }
+            if (file.getName().startsWith(dateTime)
+                    && (!isToday || file.getName().contains(TrojanConstants.UP))) {
+                logFileList.add(file);
+            }
+        }
+        return logFileList;
+    }
+
+    /**
+     * Note: this is a time-consuming operation
+     * <p>
+     * clean up the log files async：delete the overdue log files and compress the valid log files by GZ
+     *
+     * @param context
+     * @param logDirPath
+     * @param dateTime
+     */
+    public static File getLogFileByDate(Context context, String logDirPath, String dateTime) {
+        if (context == null || TextUtils.isEmpty(logDirPath) || TextUtils.isEmpty(dateTime)) {
+            return null;
+        }
+
+        final List<File> allLogFiles = new LinkedList<>();
+
+        File tempDir = getTempDir(context);
+        if (tempDir != null) {
+            allLogFiles.addAll(filterLogFile(tempDir.listFiles(), dateTime));
+        }
+
+        if (!TextUtils.isEmpty(logDirPath)) {
+            allLogFiles.addAll(filterLogFile(new File(logDirPath).listFiles(), dateTime));
+        }
+
+        if (allLogFiles.size() == 0) {
+            return null;
+        }
+
+        Collections.sort(allLogFiles, new Comparator<File>() {
+            @Override
+            public int compare(File lhs, File rhs) {
+                return (int) (rhs.lastModified() - lhs.lastModified());
+            }
+        });
+
+        File gzFile = null;
+
+        for (File logFile : allLogFiles) {
+            File tempFile = handleLogFile(logFile, logDirPath, true);
+            if (tempFile != null) {
+                gzFile = tempFile;
+            }
+        }
+
+        return gzFile;
     }
 
     public static List<File> renameToUpAllIfNeed(Context context, String writeFileName, String logDirPath) {
@@ -312,31 +383,28 @@ public final class FileHelper {
 
         final List<File> logFileList = new LinkedList<>();
         for (File logFile : files) {
-            if (logFile == null || !logFile.isFile()) {
+            if (!isFileExist(logFile)) {
                 continue;
             }
-            String fileName = logFile.getName();
-
-            // delete the log file when fileName is empty
-            if (TextUtils.isEmpty(fileName)) {
+            if (!isFileFormat(logFile) || isFileOverdue(logFile)) {
                 logFile.delete();
                 continue;
             }
+
+            final String fileName = logFile.getName();
+
             // skip the writing file
-            if (writeFileName.equals(fileName)) {
+            if (writeFileName.equals(fileName) || fileName.contains(TrojanConstants.UP)) {
                 continue;
             }
 
-            logFile = preHandleLogFile(logFile, logDirPath, false);
-            if (logFile != null) {
-                logFileList.add(logFile);
-            }
+            renameToUp(logFile);
         }
         return logFileList;
     }
 
     public static void deleteBlankContent(File file) {
-        if (file == null || !file.isFile()) {
+        if (isFileExist(file)) {
             return;
         }
         RandomAccessFile raf = null;

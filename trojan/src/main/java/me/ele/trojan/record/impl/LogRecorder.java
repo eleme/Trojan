@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.config.LogConstants;
@@ -167,7 +168,7 @@ public class LogRecorder implements ILogRecorder {
     }
 
     @Override
-    public void prepareUpload(final PrepareUploadListener listener) {
+    public void prepareUploadAsync(final PrepareUploadListener listener) {
         if (listener == null) {
             return;
         }
@@ -175,8 +176,7 @@ public class LogRecorder implements ILogRecorder {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
-                    Logger.e("no permission for prepareUpload");
-
+                    Logger.e("no permission for prepareUploadAsync");
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -200,6 +200,18 @@ public class LogRecorder implements ILogRecorder {
                 });
             }
         });
+    }
+
+    @Override
+    public File prepareUploadSync(String dateTime) {
+        if (TextUtils.isEmpty(dateTime) || !PermissionHelper.hasWriteAndReadStoragePermission(context)) {
+            return null;
+        }
+        if (dateTime.equals(DateUtils.getDate())) {
+            tryInitLogWriter();
+            logWriter.closeAndRenew();
+        }
+        return FileHelper.getLogFileByDate(context, config.getLogDir(), dateTime);
     }
 
     private void initNormalLogWriter() {

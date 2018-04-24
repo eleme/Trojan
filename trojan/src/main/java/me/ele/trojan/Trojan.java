@@ -2,6 +2,7 @@ package me.ele.trojan;
 
 import android.content.Context;
 
+import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.config.TrojanConfig;
@@ -68,8 +69,16 @@ public class Trojan {
         TrojanManager.getInstance().logToJson(tag, version, src, encryptFlag);
     }
 
-    public static void prepareUploadLogFile(WaitUploadListener waitUploadListener) {
-        TrojanManager.getInstance().prepareUploadLogFile(waitUploadListener);
+    public static void prepareUploadLogFileAsync(WaitUploadListener waitUploadListener) {
+        TrojanManager.getInstance().prepareUploadLogFileAsync(waitUploadListener);
+    }
+
+    public static File prepareUploadLogFileSync(final String dateTime) {
+        return TrojanManager.getInstance().prepareUploadLogFileSync(dateTime);
+    }
+
+    public static void destroy() {
+        TrojanManager.getInstance().destroy();
     }
 
 }
