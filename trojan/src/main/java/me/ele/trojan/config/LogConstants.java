@@ -6,7 +6,9 @@ package me.ele.trojan.config;
 
 public final class LogConstants {
 
-    public static final String LOG_VERSION = "v1";
+    public static final int LOG_VERSION1 = 1;
+
+    public static final int LOG_VERSION2 = 2;
 
     public static final String FIELD_SEPERATOR = "#!";
 

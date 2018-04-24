@@ -7,24 +7,24 @@ import java.util.concurrent.Executors;
  * Created by michaelzhong on 2017/11/7.
  */
 
-public class ExecutorDispatcher {
+public class TrojanExecutor {
 
-    private static volatile ExecutorDispatcher sInstance;
+    private static volatile TrojanExecutor sInstance;
 
     private ExecutorService recordExecutor;
 
     private ExecutorService uploadExecutor;
 
-    private ExecutorDispatcher() {
+    private TrojanExecutor() {
         recordExecutor = Executors.newSingleThreadExecutor();
         uploadExecutor = Executors.newSingleThreadExecutor();
     }
 
-    public static ExecutorDispatcher getInstance() {
+    public static TrojanExecutor getInstance() {
         if (sInstance == null) {
-            synchronized (ExecutorDispatcher.class) {
+            synchronized (TrojanExecutor.class) {
                 if (sInstance == null) {
-                    sInstance = new ExecutorDispatcher();
+                    sInstance = new TrojanExecutor();
                 }
             }
         }
@@ -39,12 +39,11 @@ public class ExecutorDispatcher {
     }
 
 
-    public void executePrepareUpload(Runnable runnable) {
+    public void executeUpload(Runnable runnable) {
         if (runnable == null) {
             return;
         }
         uploadExecutor.execute(runnable);
-
     }
 
 

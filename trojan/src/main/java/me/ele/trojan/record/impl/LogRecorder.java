@@ -5,12 +5,13 @@ import android.os.Handler;
 import android.os.Looper;
 import android.text.TextUtils;
 
+import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.config.LogConstants;
 import me.ele.trojan.config.TrojanConfig;
 import me.ele.trojan.config.TrojanConstants;
-import me.ele.trojan.executor.ExecutorDispatcher;
+import me.ele.trojan.executor.TrojanExecutor;
 import me.ele.trojan.helper.FileHelper;
 import me.ele.trojan.helper.PermissionHelper;
 import me.ele.trojan.listener.PrepareUploadListener;
@@ -22,6 +23,7 @@ import me.ele.trojan.utils.AppUtils;
 import me.ele.trojan.utils.DateUtils;
 import me.ele.trojan.utils.DeviceUtils;
 import me.ele.trojan.utils.GsonUtils;
+import me.ele.trojan.utils.TagUtil;
 
 /**
  * Created by michaelzhong on 2017/11/7.
@@ -49,7 +51,7 @@ public class LogRecorder implements ILogRecorder {
         this.context = config.getContext();
         this.cipherKey = config.getCipherKey();
 
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
@@ -72,7 +74,7 @@ public class LogRecorder implements ILogRecorder {
         if (!config.isEnableBackup()) {
             try {
                 MmapLogWriter mmapLogWriter = new MmapLogWriter();
-                String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, getBasicInfo(config), false);
+                String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, TagUtil.getVersionByTag(LogConstants.BASIC_TAG), getBasicInfo(config), false);
                 mmapLogWriter.init(context, basicInfo, dirPath, cipherKey);
                 logWriter = mmapLogWriter;
             } catch (Throwable ex) {
@@ -88,14 +90,14 @@ public class LogRecorder implements ILogRecorder {
     @Override
     public void refreshUser(String user) {
         config.setUserInfo(user);
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
                     Logger.e("no permission for refreshUser");
                     return;
                 }
-                String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, getBasicInfo(config), false);
+                String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, TagUtil.getVersionByTag(LogConstants.BASIC_TAG), getBasicInfo(config), false);
                 try {
                     tryInitLogWriter();
                     logWriter.refreshBasicInfo(basicInfo);
@@ -114,28 +116,28 @@ public class LogRecorder implements ILogRecorder {
     }
 
     @Override
-    public void log(final String tag, final String msg, final boolean encryptFlag) {
+    public void log(final String tag, final int version, final String msg, final boolean encryptFlag) {
         if (TextUtils.isEmpty(tag) || TextUtils.isEmpty(msg)) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
                     Logger.e("no permission for log");
                     return;
                 }
-                checkInitAndRecordSync(logFormatter.format(tag, msg, encryptFlag), encryptFlag);
+                checkInitAndRecordSync(logFormatter.format(tag, version, msg, encryptFlag), encryptFlag);
             }
         });
     }
 
     @Override
-    public void log(final String tag, final List<String> msgFieldList, final boolean encryptFlag) {
+    public void log(final String tag, final int version, final List<String> msgFieldList, final boolean encryptFlag) {
         if (TextUtils.isEmpty(tag) || msgFieldList == null || msgFieldList.size() == 0) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 //然后要判断是否logWriter是否已经初始化(因为可能在这之前都没权限),如果还没初始化的话，需要先初始化
@@ -143,39 +145,38 @@ public class LogRecorder implements ILogRecorder {
                     Logger.e("no permission for log msgFieldList");
                     return;
                 }
-                checkInitAndRecordSync(logFormatter.format(tag, msgFieldList, encryptFlag), encryptFlag);
+                checkInitAndRecordSync(logFormatter.format(tag, version, msgFieldList, encryptFlag), encryptFlag);
             }
         });
     }
 
     @Override
-    public void logToJson(final String tag, final Object obj, final boolean encryptFlag) {
+    public void logToJson(final String tag, final int version, final Object obj, final boolean encryptFlag) {
         if (TextUtils.isEmpty(tag) || obj == null) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
                     Logger.e("no permission for logToJson");
                     return;
                 }
-                checkInitAndRecordSync(logFormatter.format(tag, GsonUtils.toJson(obj), encryptFlag), encryptFlag);
+                checkInitAndRecordSync(logFormatter.format(tag, version, GsonUtils.toJson(obj), encryptFlag), encryptFlag);
             }
         });
     }
 
     @Override
-    public void prepareUpload(final PrepareUploadListener listener) {
+    public void prepareUploadAsync(final PrepareUploadListener listener) {
         if (listener == null) {
             return;
         }
-        ExecutorDispatcher.getInstance().executeRecord(new Runnable() {
+        TrojanExecutor.getInstance().executeRecord(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
-                    Logger.e("no permission for prepareUpload");
-
+                    Logger.e("no permission for prepareUploadAsync");
                     handler.post(new Runnable() {
                         @Override
                         public void run() {
@@ -201,11 +202,23 @@ public class LogRecorder implements ILogRecorder {
         });
     }
 
+    @Override
+    public File prepareUploadSync(String dateTime) {
+        if (TextUtils.isEmpty(dateTime) || !PermissionHelper.hasWriteAndReadStoragePermission(context)) {
+            return null;
+        }
+        if (dateTime.equals(DateUtils.getDate())) {
+            tryInitLogWriter();
+            logWriter.closeAndRenew();
+        }
+        return FileHelper.getLogFileByDate(context, config.getLogDir(), dateTime);
+    }
+
     private void initNormalLogWriter() {
         Logger.e("initNormalLogWriter");
         try {
             NormalLogWriter normalLogWriter = new NormalLogWriter();
-            String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, getBasicInfo(config), false);
+            String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, TagUtil.getVersionByTag(LogConstants.BASIC_TAG), getBasicInfo(config), false);
             normalLogWriter.init(context, basicInfo, dirPath, cipherKey);
             logWriter = normalLogWriter;
         } catch (Throwable e) {
@@ -261,8 +274,6 @@ public class LogRecorder implements ILogRecorder {
                 initNormalLogWriter();
                 tryWriteLog(msgContent, encryptFlag);
             }
-        } finally {
-            msgContent = null;
         }
     }
 

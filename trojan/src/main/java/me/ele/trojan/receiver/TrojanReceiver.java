@@ -6,12 +6,13 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.os.BatteryManager;
 
-import java.text.DecimalFormat;
 import java.util.LinkedList;
 import java.util.List;
 
 import me.ele.trojan.Trojan;
 import me.ele.trojan.config.LogConstants;
+import me.ele.trojan.executor.TrojanExecutor;
+import me.ele.trojan.helper.PerformanceHelper;
 import me.ele.trojan.log.Logger;
 import me.ele.trojan.utils.NetworkUtils;
 
@@ -30,7 +31,13 @@ public class TrojanReceiver extends BroadcastReceiver {
         } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
             showNetworkType(context);
         } else if (Intent.ACTION_TIME_TICK.equals(action)) {
-            showMemoryState();
+            TrojanExecutor.getInstance().executeUpload(new Runnable() {
+                @Override
+                public void run() {
+                    PerformanceHelper.recordMemory();
+                    PerformanceHelper.recordThread();
+                }
+            });
         }
     }
 
@@ -65,16 +72,6 @@ public class TrojanReceiver extends BroadcastReceiver {
         msgList.add(String.valueOf((level * 1.00 / 100)));
         msgList.add(statusResult);
         Trojan.log(LogConstants.BATTERY_TAG, msgList);
-    }
-
-    private void showMemoryState() {
-        try {
-            float totalMemory = (float) (Runtime.getRuntime().totalMemory() * 1.0 / (1024 * 1024));
-            DecimalFormat df = new DecimalFormat("######0.00");
-            Trojan.log(LogConstants.MEMORY_TAG, String.valueOf(df.format(totalMemory)) + "MB");
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
 }

@@ -6,6 +6,7 @@ import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.text.TextUtils;
 
+import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.config.TrojanConfig;
@@ -18,11 +19,11 @@ import me.ele.trojan.record.ILogRecorder;
 import me.ele.trojan.record.impl.LogRecorder;
 import me.ele.trojan.upload.ILogUploader;
 import me.ele.trojan.upload.impl.LogUploader;
+import me.ele.trojan.utils.TagUtil;
 
 /**
  * Created by michaelzhong on 2017/11/7.
  */
-
 public class TrojanManager {
 
     private static volatile TrojanManager sInstance;
@@ -88,39 +89,54 @@ public class TrojanManager {
     }
 
     public void log(String tag, String msg) {
-        log(tag, msg, false);
+        log(tag, TagUtil.getVersionByTag(tag), msg, false);
+    }
+
+    public void log(String tag, int version, String msg) {
+        log(tag, version, msg, false);
+    }
+
+    public void log(String tag, int version, String msg, boolean cryptFlag) {
+        if (logRecorder != null && !TextUtils.isEmpty(tag) && !TextUtils.isEmpty(msg)) {
+            logRecorder.log(tag, version, msg, cryptFlag);
+        }
     }
 
     public void log(String tag, List<String> msgList) {
-        log(tag, msgList, false);
+        log(tag, TagUtil.getVersionByTag(tag), msgList, false);
     }
 
-    public void log(String tag, String msg, boolean cryptFlag) {
-        if (logRecorder != null && !TextUtils.isEmpty(tag) && !TextUtils.isEmpty(msg)) {
-            logRecorder.log(tag, msg, cryptFlag);
-        }
+    public void log(String tag, int version, List<String> msgList) {
+        log(tag, version, msgList, false);
     }
 
-    public void log(String tag, List<String> msgList, boolean cryptFlag) {
+    public void log(String tag, int version, List<String> msgList, boolean cryptFlag) {
         if (logRecorder != null && !TextUtils.isEmpty(tag) && msgList != null && msgList.size() > 0) {
-            logRecorder.log(tag, msgList, cryptFlag);
+            logRecorder.log(tag, version, msgList, cryptFlag);
         }
     }
 
-    public void logToJson(String tag, Object obj) {
-        logRecorder.logToJson(tag, obj, false);
+    public void logToJson(String tag, int version, Object obj) {
+        logToJson(tag, version, obj, false);
     }
 
-    public void logToJson(String tag, Object obj, boolean encryptFlag) {
+    public void logToJson(String tag, int version, Object obj, boolean encryptFlag) {
         if (logRecorder != null && !TextUtils.isEmpty(tag) && obj != null) {
-            logRecorder.logToJson(tag, obj, encryptFlag);
+            logRecorder.logToJson(tag, version, obj, encryptFlag);
         }
     }
 
-    public void prepareUploadLogFile(final WaitUploadListener listener) {
+    public void prepareUploadLogFileAsync(final WaitUploadListener listener) {
         if (logUploader != null && listener != null) {
-            logUploader.prepareUploadLogFile(listener);
+            logUploader.prepareUploadLogFileAsync(listener);
         }
+    }
+
+    public File prepareUploadLogFileSync(final String dateTime) {
+        if (logUploader != null && !TextUtils.isEmpty(dateTime)) {
+            return logUploader.prepareUploadLogFileSync(dateTime);
+        }
+        return null;
     }
 
     public void destroy() {

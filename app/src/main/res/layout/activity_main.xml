@@ -37,6 +37,12 @@
                 android:text="Write Big Log" />
 
             <Button
+                android:id="@+id/btn_get_log_by_date"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Get Log File By Date"/>
+
+            <Button
                 android:id="@+id/btn_upload_log_file"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"

@@ -2,6 +2,7 @@ package me.ele.trojan;
 
 import android.content.Context;
 
+import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.config.TrojanConfig;
@@ -40,28 +41,44 @@ public class Trojan {
         TrojanManager.getInstance().log(tag, msg);
     }
 
-    public static void log(String tag, String msg, boolean encryptFlag) {
-        TrojanManager.getInstance().log(tag, msg, encryptFlag);
+    public static void log(String tag, int version, String msg) {
+        TrojanManager.getInstance().log(tag, version, msg, false);
+    }
+
+    public static void log(String tag, int version, String msg, boolean encryptFlag) {
+        TrojanManager.getInstance().log(tag, version, msg, encryptFlag);
     }
 
     public static void log(String tag, List<String> msgList) {
         TrojanManager.getInstance().log(tag, msgList);
     }
 
-    public static void log(String tag, List<String> msgList, boolean encryptFlag) {
-        TrojanManager.getInstance().log(tag, msgList, encryptFlag);
+    public static void log(String tag, int version, List<String> msgList) {
+        TrojanManager.getInstance().log(tag, version, msgList, false);
     }
 
-    public static void logToJson(String tag, Object src) {
-        TrojanManager.getInstance().logToJson(tag, src, false);
+    public static void log(String tag, int version, List<String> msgList, boolean encryptFlag) {
+        TrojanManager.getInstance().log(tag, version, msgList, encryptFlag);
     }
 
-    public static void logToJson(String tag, Object src, boolean encryptFlag) {
-        TrojanManager.getInstance().logToJson(tag, src, encryptFlag);
+    public static void logToJson(String tag, int version, Object src) {
+        TrojanManager.getInstance().logToJson(tag, version, src, false);
     }
 
-    public static void prepareUploadLogFile(WaitUploadListener waitUploadListener) {
-        TrojanManager.getInstance().prepareUploadLogFile(waitUploadListener);
+    public static void logToJson(String tag, int version, Object src, boolean encryptFlag) {
+        TrojanManager.getInstance().logToJson(tag, version, src, encryptFlag);
+    }
+
+    public static void prepareUploadLogFileAsync(WaitUploadListener waitUploadListener) {
+        TrojanManager.getInstance().prepareUploadLogFileAsync(waitUploadListener);
+    }
+
+    public static File prepareUploadLogFileSync(final String dateTime) {
+        return TrojanManager.getInstance().prepareUploadLogFileSync(dateTime);
+    }
+
+    public static void destroy() {
+        TrojanManager.getInstance().destroy();
     }
 
 }

@@ -69,4 +69,24 @@ public class NetworkUtils {
         return NETWORK_NONE;
     }
 
+    /**
+     * @param context
+     * @return
+     */
+    public static boolean isNetworkAvailable(Context context) {
+        if (context == null) {
+            return false;
+        }
+        ConnectivityManager connectivityManager = (ConnectivityManager) context
+                .getApplicationContext().getSystemService(
+                        Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager == null) {
+            return false;
+        }
+
+        NetworkInfo networkinfo = connectivityManager.getActiveNetworkInfo();
+
+        return networkinfo != null && networkinfo.isAvailable();
+    }
+
 }

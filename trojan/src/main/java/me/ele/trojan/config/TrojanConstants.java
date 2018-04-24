@@ -14,10 +14,18 @@ public class TrojanConstants {
 
     public static final String GZ = ".gz";
 
-    public static final String TROJAN_LOG = "_trojanLog";
-
     public static final String LOG_DIR = "trojan_log";
 
     public static final String MMAP = "-mmap";
+
+    public static final String TAG_THREAD = "Threads";
+
+    public static final int MIN_THREAD_NUM = 10;
+
+    public static final String MB = "MB";
+
+    public static int FORMAT_KB = 1024;
+
+    public static int FORMAT_MB = 1024 * 1024;
 
 }
