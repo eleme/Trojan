@@ -100,7 +100,7 @@ public class LancetHook {
         //还要获取到View在哪个页面，即如果是在Fragment中则打印出Fragment信息，否则打印出Activity信息
         String pageInfo = getPageInfo(v);
         if (TextUtils.isEmpty(pageInfo)) {
-            msgList.add(This.get().toString());
+            msgList.add(v.toString());
         } else {
             msgList.add(pageInfo);
         }

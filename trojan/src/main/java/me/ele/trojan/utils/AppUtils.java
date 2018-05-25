@@ -5,6 +5,12 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
+import android.os.Environment;
+import android.os.StatFs;
+
+import java.io.File;
+
+import me.ele.trojan.config.TrojanConstants;
 
 /**
  * Created by michaelzhong on 2017/12/22.
@@ -50,6 +56,42 @@ public class AppUtils {
             }
         }
         return "UNKNOWN";
+    }
+
+    /**
+     * 获取data目录下的可用空间，MB为单位
+     *
+     * @return
+     */
+    public static long getDataAvailableSize() {
+        try {
+            File path = Environment.getDataDirectory();
+            StatFs stat = new StatFs(path.getPath());
+            long blockSize = stat.getBlockSize();
+            long availableBlocks = stat.getAvailableBlocks();
+            return (blockSize * availableBlocks) / TrojanConstants.FORMAT_MB;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
+    }
+
+    /**
+     * 获取SD目录下的可用空间，MB为单位
+     *
+     * @return
+     */
+    public static long getSDAvailableSize() {
+        try {
+            File path = Environment.getExternalStorageDirectory();
+            StatFs stat = new StatFs(path.getPath());
+            long blockSize = stat.getBlockSize();
+            long availableBlocks = stat.getAvailableBlocks();
+            return (blockSize * availableBlocks) / TrojanConstants.FORMAT_MB;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return 0;
     }
 
 }
