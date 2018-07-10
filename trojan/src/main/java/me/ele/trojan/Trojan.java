@@ -21,20 +21,22 @@ public class Trojan {
     private static Context sContext;
 
     public static void init(final TrojanConfig config) {
-
-        sContext = config.getContext();
-
         TrojanExecutor.getInstance().execute(new Runnable() {
             @Override
             public void run() {
-                if (AppUtils.getDataAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB
-                        || AppUtils.getSDAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB) {
-                    Log.e("Trojan", "Trojan-->init,failed:space is not enough!");
-                    return;
-                }
-                TrojanManager.getInstance().init(config);
+                initSync(config);
             }
         });
+    }
+
+    public static void initSync(TrojanConfig config) {
+        sContext = config.getContext();
+        if (AppUtils.getDataAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB
+                || AppUtils.getSDAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB) {
+            Log.e("Trojan", "Trojan-->init,failed:space is not enough!");
+            return;
+        }
+        TrojanManager.getInstance().init(config);
     }
 
     public static Context getContext() {
