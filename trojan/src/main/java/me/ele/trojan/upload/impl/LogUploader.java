@@ -40,7 +40,7 @@ public class LogUploader implements ILogUploader {
         this.logRecorder = logRecorder;
 
         // should check upload file when init
-        TrojanExecutor.getInstance().executeUpload(new Runnable() {
+        TrojanExecutor.getInstance().execute(new Runnable() {
             @Override
             public void run() {
                 if (!PermissionHelper.hasWriteAndReadStoragePermission(context)) {
@@ -68,7 +68,7 @@ public class LogUploader implements ILogUploader {
             @Override
             public void readyToUpload() {
                 Logger.i("LogUploader-->readyToUpload");
-                TrojanExecutor.getInstance().executeUpload(new Runnable() {
+                TrojanExecutor.getInstance().execute(new Runnable() {
                     @Override
                     public void run() {
                         final List<File> gzFileList = FileHelper.cleanUpLogFile(context, trojanConfig.getLogDir());

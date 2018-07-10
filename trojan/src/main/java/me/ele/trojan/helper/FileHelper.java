@@ -403,7 +403,7 @@ public final class FileHelper {
     }
 
     public static void deleteBlankContent(File file) {
-        if (isFileExist(file)) {
+        if (!isFileExist(file)) {
             return;
         }
         RandomAccessFile raf = null;
@@ -417,7 +417,7 @@ public final class FileHelper {
             while (pos > 0) {
                 --pos;
                 raf.seek(pos);
-                if (raf.readByte() == '\n') {
+                if (raf.readByte() == '>') {
                     break;
                 }
             }

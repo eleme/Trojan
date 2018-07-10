@@ -32,7 +32,7 @@ public class LogFormatter implements ILogFormatter {
         content.append(LogConstants.FIELD_SEPERATOR);
         content.append(msg);
         if (!crypt) {
-            content.append('\n');
+            content.append("\n>");
         }
         return content.toString();
     }
@@ -58,7 +58,7 @@ public class LogFormatter implements ILogFormatter {
             }
         }
         if (!crypt) {
-            content.append('\n');
+            content.append("\n>");
         }
         return content.toString();
     }

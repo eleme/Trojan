@@ -8,6 +8,7 @@ import java.util.List;
 
 import me.ele.trojan.config.TrojanConfig;
 import me.ele.trojan.config.TrojanConstants;
+import me.ele.trojan.executor.TrojanExecutor;
 import me.ele.trojan.listener.WaitUploadListener;
 import me.ele.trojan.utils.AppUtils;
 
@@ -19,14 +20,21 @@ public class Trojan {
 
     private static Context sContext;
 
-    public static void init(TrojanConfig config) {
-        if (AppUtils.getDataAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB
-                || AppUtils.getSDAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB) {
-            Log.e("Trojan", "Trojan-->init,failed:space is not enough!");
-            return;
-        }
+    public static void init(final TrojanConfig config) {
+
         sContext = config.getContext();
-        TrojanManager.getInstance().init(config);
+
+        TrojanExecutor.getInstance().execute(new Runnable() {
+            @Override
+            public void run() {
+                if (AppUtils.getDataAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB
+                        || AppUtils.getSDAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB) {
+                    Log.e("Trojan", "Trojan-->init,failed:space is not enough!");
+                    return;
+                }
+                TrojanManager.getInstance().init(config);
+            }
+        });
     }
 
     public static Context getContext() {
