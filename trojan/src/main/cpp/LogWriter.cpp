@@ -89,9 +89,9 @@ ErrInfo *LogWriter::initMmap(JNIEnv *env, std::string basicInfo, std::string log
 
     bool findFlag = false;
 
-    for (off_t i = logPageSize - 1; i >= 0; i--) {
-        // Find the first '\n' and stop the search, if not found, then the page is still blank, just back to the beginning of the page
-        if (recordPtr[i] == '\n') {
+    for (off_t i = logPageSize - 1; i >= 1; i--) {
+        // Find the first "\n>" and stop the search, if not found, then the page is still blank, just back to the beginning of the page
+        if (recordPtr[i] == '>' && recordPtr[i - 1] == '\n') {
             findFlag = true;
             if (i != logPageSize - 1) {
                 recordIndex = i + 1;

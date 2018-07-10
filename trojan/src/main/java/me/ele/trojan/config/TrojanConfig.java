@@ -44,6 +44,9 @@ public final class TrojanConfig {
     }
 
     public String getLogDir() {
+        if (TextUtils.isEmpty(logDir)) {
+            logDir = FileHelper.getLogDir(context).getAbsolutePath();
+        }
         File dirFile = new File(logDir);
         if (!dirFile.exists() || !dirFile.isDirectory()) {
             dirFile.mkdirs();
@@ -125,9 +128,7 @@ public final class TrojanConfig {
             if (userInfo == null) {
                 userInfo = "";
             }
-            if (TextUtils.isEmpty(logDir)) {
-                logDir = FileHelper.getLogDir(context).getAbsolutePath();
-            } else {
+            if (!TextUtils.isEmpty(logDir)) {
                 logDir = logDir + File.separator + AppUtils.getCurProcessName(context);
             }
         }

@@ -39,7 +39,7 @@ public class TrojanExecutor {
     }
 
 
-    public void executeUpload(Runnable runnable) {
+    public void execute(Runnable runnable) {
         if (runnable == null) {
             return;
         }
