@@ -5,6 +5,7 @@
 #include "ErrInfo.h"
 #include <iostream>
 #include <sys/file.h>
+#include <cstring>
 
 LogWriter::LogWriter() {
     this->cipherStart = strlen(CIPHER_START);
@@ -327,13 +328,13 @@ ErrInfo *LogWriter::closeAndRenew(JNIEnv *env) {
 std::string LogWriter::getDate() {
     time_t now = time(0);
     tm localTime = *localtime(&now);
-    std::string *date;
+    std::string date;
     size_t bufSize = sizeof(char) * 20;
     char *buf = (char *) malloc(bufSize);
     strftime(buf, bufSize, "%Y-%m-%d", &localTime);
-    date = new std::string(buf);
+    date = std::string(buf);
     free(buf);
-    return *date;
+    return date;
 }
 
 ErrInfo *LogWriter::unixMunmap(int fd, void *map, size_t map_size) {

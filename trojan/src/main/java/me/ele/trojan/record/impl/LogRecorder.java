@@ -74,8 +74,7 @@ public class LogRecorder implements ILogRecorder {
         if (!config.isEnableBackup()) {
             try {
                 MmapLogWriter mmapLogWriter = new MmapLogWriter();
-                String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, TagUtil.getVersionByTag(LogConstants.BASIC_TAG), getBasicInfo(config), false);
-                mmapLogWriter.init(context, basicInfo, dirPath, cipherKey);
+                mmapLogWriter.init(context, getFormatBasicInfo(), dirPath, cipherKey);
                 logWriter = mmapLogWriter;
             } catch (Throwable ex) {
                 ex.printStackTrace();
@@ -97,7 +96,7 @@ public class LogRecorder implements ILogRecorder {
                     Logger.e("no permission for refreshUser");
                     return;
                 }
-                String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, TagUtil.getVersionByTag(LogConstants.BASIC_TAG), getBasicInfo(config), false);
+                String basicInfo = getFormatBasicInfo();
                 try {
                     tryInitLogWriter();
                     logWriter.refreshBasicInfo(basicInfo);
@@ -186,6 +185,7 @@ public class LogRecorder implements ILogRecorder {
                     return;
                 }
                 tryInitLogWriter();
+                logWriter.refreshBasicInfo(getFormatBasicInfo());
                 logWriter.closeAndRenew();
 
                 final String writeFileName = DateUtils.getDate() + (logWriter instanceof MmapLogWriter ? TrojanConstants.MMAP : "");
@@ -209,6 +209,7 @@ public class LogRecorder implements ILogRecorder {
         }
         if (dateTime.equals(DateUtils.getDate())) {
             tryInitLogWriter();
+            logWriter.refreshBasicInfo(getFormatBasicInfo());
             logWriter.closeAndRenew();
         }
         return FileHelper.getLogFileByDate(context, config.getLogDir(), dateTime);
@@ -218,8 +219,7 @@ public class LogRecorder implements ILogRecorder {
         Logger.e("initNormalLogWriter");
         try {
             NormalLogWriter normalLogWriter = new NormalLogWriter();
-            String basicInfo = logFormatter.format(LogConstants.BASIC_TAG, TagUtil.getVersionByTag(LogConstants.BASIC_TAG), getBasicInfo(config), false);
-            normalLogWriter.init(context, basicInfo, dirPath, cipherKey);
+            normalLogWriter.init(context, getFormatBasicInfo(), dirPath, cipherKey);
             logWriter = normalLogWriter;
         } catch (Throwable e) {
             e.printStackTrace();
@@ -234,7 +234,8 @@ public class LogRecorder implements ILogRecorder {
         }
     }
 
-    private String getBasicInfo(TrojanConfig config) {
+    private String getFormatBasicInfo() {
+
         StringBuilder stringBuilder = new StringBuilder();
         stringBuilder.append("Android")
                 .append(LogConstants.INTERNAL_SEPERATOR)
@@ -251,7 +252,8 @@ public class LogRecorder implements ILogRecorder {
                 .append(DeviceUtils.getDeviceInfo())
                 .append(LogConstants.INTERNAL_SEPERATOR)
                 .append(DeviceUtils.isRoot() ? 1 : 0);
-        return stringBuilder.toString();
+
+        return logFormatter.format(LogConstants.BASIC_TAG, TagUtil.getVersionByTag(LogConstants.BASIC_TAG), stringBuilder.toString(), false);
     }
 
     /**
