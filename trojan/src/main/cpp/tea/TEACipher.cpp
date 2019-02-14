@@ -4,6 +4,7 @@
 
 #include <malloc.h>
 #include "TEACipher.h"
+#include <string.h>
 
 void encryptLong(uint32_t *firstChunk, uint32_t *secondChunk, uint32_t *key) {
     uint32_t y = *firstChunk;

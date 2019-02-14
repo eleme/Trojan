@@ -8,8 +8,8 @@ buildscript {
 apply plugin: 'com.android.library'
 apply plugin: 'com.novoda.bintray-release'
 
-def trojan_version_code = 15
-def trojan_version = "0.1.5"
+def trojan_version_code = 16
+def trojan_version = "0.1.6"
 
 android {
     //这是为了debug C++而加的，后面要去掉

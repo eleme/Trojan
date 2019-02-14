@@ -166,7 +166,7 @@ public final class FileHelper {
             }
             File gzipFile = createGZIPFile(sourceFile, parentPath);
             fis = new FileInputStream(sourceFile);
-            fos = new FileOutputStream(gzipFile, true);
+            fos = new FileOutputStream(gzipFile);
             gos = new GZIPOutputStream(fos);
             byte buffer[] = new byte[1024];
             int count;
@@ -201,9 +201,10 @@ public final class FileHelper {
         gzPathBuilder.append(getGZIPFileName(sourceFile));
 
         File gzFile = new File(gzPathBuilder.toString());
-        if (!gzFile.exists()) {
-            gzFile.createNewFile();
+        if (gzFile.exists()) {
+            gzFile.delete();
         }
+        gzFile.createNewFile();
         return gzFile;
     }
 
