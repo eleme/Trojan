@@ -3,7 +3,6 @@ package me.ele.trojan.helper;
 import android.content.Context;
 import android.os.Build;
 import android.os.Environment;
-import android.os.StatFs;
 import android.text.TextUtils;
 
 import java.io.File;
@@ -167,7 +166,7 @@ public final class FileHelper {
             }
             File gzipFile = createGZIPFile(sourceFile, parentPath);
             fis = new FileInputStream(sourceFile);
-            fos = new FileOutputStream(gzipFile, true);
+            fos = new FileOutputStream(gzipFile);
             gos = new GZIPOutputStream(fos);
             byte buffer[] = new byte[1024];
             int count;
@@ -202,9 +201,10 @@ public final class FileHelper {
         gzPathBuilder.append(getGZIPFileName(sourceFile));
 
         File gzFile = new File(gzPathBuilder.toString());
-        if (!gzFile.exists()) {
-            gzFile.createNewFile();
+        if (gzFile.exists()) {
+            gzFile.delete();
         }
+        gzFile.createNewFile();
         return gzFile;
     }
 
@@ -404,7 +404,7 @@ public final class FileHelper {
     }
 
     public static void deleteBlankContent(File file) {
-        if (isFileExist(file)) {
+        if (!isFileExist(file)) {
             return;
         }
         RandomAccessFile raf = null;
@@ -418,7 +418,7 @@ public final class FileHelper {
             while (pos > 0) {
                 --pos;
                 raf.seek(pos);
-                if (raf.readByte() == '\n') {
+                if (raf.readByte() == '>') {
                     break;
                 }
             }
@@ -437,25 +437,4 @@ public final class FileHelper {
         }
     }
 
-    public static long getSDFreeSize() {
-        try {
-            File path = Environment.getExternalStorageDirectory();
-            StatFs sf = new StatFs(path.getPath());
-            long blockSize = sf.getBlockSize();
-            long freeBlocks = sf.getAvailableBlocks();
-            return (freeBlocks * blockSize) / 1024 / 1024;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return TrojanConstants.MIN_SDCARD_FREE_SPACE_MB;
-    }
-
-    /**
-     * determine whether the remaining space of Sdcard is greater than 50
-     *
-     * @return
-     */
-    public static boolean isSDEnough() {
-        return getSDFreeSize() >= TrojanConstants.MIN_SDCARD_FREE_SPACE_MB;
-    }
 }

@@ -8,7 +8,7 @@ public class TrojanConstants {
 
     public static final long FIVE_DAY_MILLS = 5 * 24 * 3600 * 1000L;
 
-    public static final long MIN_SDCARD_FREE_SPACE_MB = 50;
+    public static final long MIN_FREE_SPACE_MB = 100;
 
     public static final String UP = "-up";
 

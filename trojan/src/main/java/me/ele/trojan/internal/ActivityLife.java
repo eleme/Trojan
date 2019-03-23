@@ -19,37 +19,37 @@ public class ActivityLife {
                 new Application.ActivityLifecycleCallbacks() {
                     @Override
                     public void onActivityCreated(Activity activity, Bundle bundle) {
-                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, "onCreate:" + activity.getClass().getName() + " Bundle = " + bundle);
+                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, android.os.Process.myPid() + "#*" + activity.getClass().getName() + (bundle == null ? "#*onCreate:Bundle=null" : "#*onCreate:Bundle!=null"));
                     }
 
                     @Override
                     public void onActivityStarted(Activity activity) {
-                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, "onStart:" + activity.getClass().getName());
+                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, android.os.Process.myPid() + "#*" + activity.getClass().getName() + "#*onStart");
                     }
 
                     @Override
                     public void onActivityResumed(Activity activity) {
-                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, "onResume:" + activity.getClass().getName());
+                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, android.os.Process.myPid() + "#*" + activity.getClass().getName() + "#*onResume");
                     }
 
                     @Override
                     public void onActivityPaused(Activity activity) {
-                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, "onPause:" + activity.getClass().getName());
+                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, android.os.Process.myPid() + "#*" + activity.getClass().getName() + "#*onPause");
                     }
 
                     @Override
                     public void onActivityStopped(Activity activity) {
-                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, "onStop:" + activity.getClass().getName());
+                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, android.os.Process.myPid() + "#*" + activity.getClass().getName() + "#*onStop");
                     }
 
                     @Override
                     public void onActivitySaveInstanceState(Activity activity, Bundle bundle) {
-                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, "onSaveInstanceState:" + activity.getClass().getName());
+                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, android.os.Process.myPid() + "#*" + activity.getClass().getName() + (bundle == null ? "#*onSaveInstanceState:Bundle=null" : "#*onSaveInstanceState:Bundle!=null"));
                     }
 
                     @Override
                     public void onActivityDestroyed(Activity activity) {
-                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, "onDestroy:" + activity.getClass().getName());
+                        Trojan.log(LogConstants.ACTIVITY_LIFE_TAG, android.os.Process.myPid() + "#*" + activity.getClass().getName() + "#*onDestroy");
                     }
                 }
         );

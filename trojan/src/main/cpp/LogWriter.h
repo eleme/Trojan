@@ -25,7 +25,7 @@
 #define ALLOC_PAGE_NUM 40
 //含有\n的目的是为了将Cipher_Start与密文写在不同的行，这样读取时比较方便
 #define CIPHER_START "<Cipher>"
-#define CIPHER_END "<Cipher>\n"
+#define CIPHER_END "<Cipher>\n>"
 
 class LogWriter {
 public:

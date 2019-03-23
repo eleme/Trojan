@@ -6,7 +6,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.os.BatteryManager;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 
 import me.ele.trojan.Trojan;
@@ -23,15 +23,26 @@ import me.ele.trojan.utils.NetworkUtils;
 public class TrojanReceiver extends BroadcastReceiver {
 
     @Override
-    public void onReceive(Context context, Intent intent) {
+    public void onReceive(Context context, final Intent intent) {
         final String action = intent.getAction();
         Logger.i("TrojanReceiver-->action:" + action);
         if (Intent.ACTION_BATTERY_CHANGED.equals(action)) {
-            showBatteryState(intent);
+            TrojanExecutor.getInstance().execute(new Runnable() {
+                @Override
+                public void run() {
+                    showBatteryState(intent);
+                }
+            });
         } else if (ConnectivityManager.CONNECTIVITY_ACTION.equals(action)) {
-            showNetworkType(context);
+            final Context applicationContext = context.getApplicationContext();
+            TrojanExecutor.getInstance().execute(new Runnable() {
+                @Override
+                public void run() {
+                    showNetworkType(applicationContext);
+                }
+            });
         } else if (Intent.ACTION_TIME_TICK.equals(action)) {
-            TrojanExecutor.getInstance().executeUpload(new Runnable() {
+            TrojanExecutor.getInstance().execute(new Runnable() {
                 @Override
                 public void run() {
                     PerformanceHelper.recordMemory();
@@ -68,7 +79,7 @@ public class TrojanReceiver extends BroadcastReceiver {
                 break;
         }
 
-        List<String> msgList = new LinkedList<>();
+        List<String> msgList = new ArrayList<>();
         msgList.add(String.valueOf((level * 1.00 / 100)));
         msgList.add(statusResult);
         Trojan.log(LogConstants.BATTERY_TAG, msgList);

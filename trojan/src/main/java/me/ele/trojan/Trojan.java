@@ -1,12 +1,16 @@
 package me.ele.trojan;
 
 import android.content.Context;
+import android.util.Log;
 
 import java.io.File;
 import java.util.List;
 
 import me.ele.trojan.config.TrojanConfig;
+import me.ele.trojan.config.TrojanConstants;
+import me.ele.trojan.executor.TrojanExecutor;
 import me.ele.trojan.listener.WaitUploadListener;
+import me.ele.trojan.utils.AppUtils;
 
 /**
  * Created by Eric on 17/2/14.
@@ -16,8 +20,22 @@ public class Trojan {
 
     private static Context sContext;
 
-    public static void init(TrojanConfig config) {
+    public static void init(final TrojanConfig config) {
+        TrojanExecutor.getInstance().execute(new Runnable() {
+            @Override
+            public void run() {
+                initSync(config);
+            }
+        });
+    }
+
+    public static void initSync(TrojanConfig config) {
         sContext = config.getContext();
+        if (AppUtils.getDataAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB
+                || AppUtils.getSDAvailableSize() < TrojanConstants.MIN_FREE_SPACE_MB) {
+            Log.e("Trojan", "Trojan-->init,failed:space is not enough!");
+            return;
+        }
         TrojanManager.getInstance().init(config);
     }
 
